@@ -1,0 +1,73 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+.env
+.env.*
+
+# Logs
+logs/
+*.log
+
+# Build output
+dist/
+build/
+out/
+public/build/
+coverage/
+.next/
+.expo/
+.expo-shared/
+
+# React Native
+android/app/build/
+ios/build/
+ios/Pods/
+*.xcworkspace
+*.xcodeproj
+*.pbxproj
+*.xcuserstate
+*.xcuserdata
+*.swm
+*.hmap
+*.ipa
+*.apk
+*.jks
+*.keystore
+
+# Metro, Expo
+.expo/
+.expo-shared/
+*.expo
+
+# MongoDB
+dump/
+*.lock
+
+# Blockchain/Bitcoin
+*.wallet
+*.key
+*.pem
+*.btc
+*.dat
+*.ldb
+*.log
+*.pid
+*.conf
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Test
+jest-test-results.json
