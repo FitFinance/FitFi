@@ -71,3 +71,7 @@ Thumbs.db
 
 # Test
 jest-test-results.json
+
+node_modules
+package-lock.json
+dist
