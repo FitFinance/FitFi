@@ -72,7 +72,7 @@ If all commands return version numbers, the dependencies are installed correctly
 
 ## Running the Backend
 
-This section explains how to start the backend in both development and production environments.
+Before starting any method, ensure you have created a `.env` file in the root directory of the backend. The `.env` file should contain the necessary environment variables (content to be added as required).
 
 ### Development Mode
 
