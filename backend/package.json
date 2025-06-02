@@ -1,0 +1,31 @@
+{
+  "name": "basics",
+  "version": "1.0.0",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node dist/server.js",
+    "build": "tsc",
+    "dev": "concurrently \"tsc --watch\" \"nodemon dist/server.js\"",
+    "start:build": "tsc && node dist/server.js",
+    "lint": "npx eslint . --ext .ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "cors": "~2.8.5",
+    "express": "~5.1.0"
+  },
+  "devDependencies": {
+    "@types/express": "~5.0.2",
+    "@types/node": "~22.15.29",
+    "@typescript-eslint/eslint-plugin": "^8.33.0",
+    "@typescript-eslint/parser": "^8.33.0",
+    "concurrently": "~7.6.0",
+    "eslint": "^9.28.0",
+    "nodemon": "~3.1.10",
+    "typescript": "~5.8.3"
+  }
+}
