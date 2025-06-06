@@ -4,7 +4,7 @@
     "files": true,
     "transpileOnly": true,
     "compilerOptions": {
-      "module": "ESNext",
+      "module": "nodenext",
       "esModuleInterop": true,
       "skipLibCheck": true
     }
@@ -21,7 +21,9 @@
   ],
   "compilerOptions": {
     "target": "es2020",
+    "module": "nodenext",
     "allowJs": false,
+    "moduleResolution": "nodenext",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
