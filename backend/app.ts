@@ -1,19 +1,22 @@
 import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-// import fs from 'fs';
 import AppError from './utils/AppError.js';
 import globalErrorHandler from './controllers/globalErrorHandler.js';
+import AuthRoutes from './routes/Auth.js';
 
-// Loading not found file into memory for quick send.
-// const notFoundPage: NonSharedBuffer = fs.readFileSync('./misc/not-found.html');
+dotenv.config({
+  path: ['./.env', './secrets.env'],
+});
 
 const app: express.Express = express();
 
-dotenv.config();
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/api/v1', (_: Request, res: Response) => {
+  const statusCode: number = 200;
   const response: APIResponse = {
     message: 'Welcome to FitFi API',
     details: {
@@ -23,22 +26,16 @@ app.get('/api/v1', (_: Request, res: Response) => {
     },
     success: true,
     status: 'success',
-    statusCode: 200,
+    statusCode: statusCode,
     data: null,
   };
-  res.status(200).json(response);
+  res.status(statusCode).json(response);
 });
 
-app.all('/api/v1/{*any}', (_: Request, __: Response, next: NextFunction) => {
-  const response: IErrorMessage = {
-    title: 'Invalid Route',
-    description: 'Please check whether there is some type in the route',
-  };
-  next(new AppError('This is not a valid backend routes', response, 404));
-});
+app.use('/api/v1/auth', AuthRoutes);
 
 app.all('/{*any}', (req: Request, _: Response, next: NextFunction) => {
-  next(
+  return next(
     new AppError(
       `There is no route '${req.originalUrl}'`,
       {
@@ -49,9 +46,6 @@ app.all('/{*any}', (req: Request, _: Response, next: NextFunction) => {
       404
     )
   );
-  // res.status(404);
-  // res.setHeader('Content-Type', 'text/html');
-  // res.send(notFoundPage);
 });
 
 app.use(globalErrorHandler);

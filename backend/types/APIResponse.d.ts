@@ -11,7 +11,7 @@ interface APIResponse {
   details: IErrorMessage;
   success: boolean;
   status: TStatus;
-  statusCode?: number;
+  statusCode: number;
   data?: any;
   stack?: Error['stack'];
 }
