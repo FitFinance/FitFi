@@ -1,11 +1,15 @@
 services:
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: fitfi-backend
     ports:
-      - '3000:3000'
-      - '3001:3001'
-    command: npm run dev
-# TODO: Incomplete Dockerfile and  Docker compose file
-# This contaienr or docker file don't have the database configured yet
-# PORTS are not properly configured
+      - 3000:3000
+  backend-docs:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: fitfi-backend-docs
+    ports:
+      - 3001:3001

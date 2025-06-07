@@ -6,8 +6,6 @@ COPY ./package.json .
 RUN npm run preinstall
 RUN npm i
 
-RUN npm run docs
-
 COPY . .
 RUN npm run build
 
