@@ -1,0 +1,15 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fitfi-backend
+    ports:
+      - 3000:3000
+  backend-docs:
+    build:
+      context: .
+      dockerfile: Dockerfile.docs
+    container_name: fitfi-backend-docs
+    ports:
+      - 3001:3001

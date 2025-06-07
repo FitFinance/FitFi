@@ -1,0 +1,9 @@
+FROM node:23-alpine
+
+WORKDIR /app
+
+RUN npm i -g docsify && npm i -g docsify-cli
+
+COPY ./docs ./docs
+
+CMD ["docsify", "serve", "docs", "--port", "3001"]
