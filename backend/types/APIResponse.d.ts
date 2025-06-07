@@ -7,11 +7,11 @@ interface IErrorMessage {
 }
 
 interface APIResponse {
-  message: string;
+  message?: string;
   details: IErrorMessage;
   success: boolean;
   status: TStatus;
-  statusCode: number;
-  data: any;
+  statusCode?: number;
+  data?: any;
   stack?: Error['stack'];
 }

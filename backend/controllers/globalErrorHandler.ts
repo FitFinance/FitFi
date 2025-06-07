@@ -1,20 +1,21 @@
 import AppError from '../utils/AppError.js';
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 
-function sendErrorProd(err: APIResponse, req: Request, res: Response) {
+function sendErrorProd(err: AppError, _: Request, res: Response) {
   // Send minimal error details in production
-  res.status(err.statusCode).json({
+  const response: APIResponse = {
     message: err.message,
     details: err.details,
     success: err.success,
     statusCode: err.statusCode,
     status: err.status,
     data: err.data,
-  });
+  };
+  return res.status(err.statusCode).json(response);
 }
 
-function sendErrorDev(err: APIResponse, req: Request, res: Response) {
-  res.status(err.statusCode).json({
+function sendErrorDev(err: AppError, _: Request, res: Response) {
+  const response: APIResponse = {
     message: err.message,
     details: err.details,
     success: err.success,
@@ -22,18 +23,22 @@ function sendErrorDev(err: APIResponse, req: Request, res: Response) {
     status: err.status,
     data: err.data,
     stack: (err as any).stack,
-  });
+  };
+  return res.status(err.statusCode).json(response);
 }
 
-function globalErrorHandler(err: AppError, req: Request, res: Response) {
+function globalErrorHandler(
+  err: AppError,
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
 
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, req, res);
   } else if (process.env.NODE_ENV === 'production') {
-    let error: APIResponse = { ...err };
-
     // if (error.name === 'CastError') error = handleCastErrorDB(error);
     // if (error.code === 11000) error = handleDuplicateFieldsDB(error);
     // if (error.name === 'ValidationError')
@@ -41,8 +46,9 @@ function globalErrorHandler(err: AppError, req: Request, res: Response) {
     // if (error.name === 'JsonWebTokenError') error = handleJWTError();
     // if (error.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
-    sendErrorProd(error, req, res);
+    sendErrorProd(err, req, res);
   }
+  next();
 }
 
 export default globalErrorHandler;

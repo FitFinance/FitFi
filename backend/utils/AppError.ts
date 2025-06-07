@@ -1,14 +1,15 @@
-class AppError extends Error implements APIResponse {
+class AppError extends Error implements Required<APIResponse> {
   details: IErrorMessage;
   statusCode: number;
   status: TStatus;
   isOperational: boolean;
   success: boolean;
   data: any;
+  stack: any;
 
-  constructor(message: IErrorMessage, statusCode: number) {
-    super(message.title);
-    this.details = message;
+  constructor(message: string, details: IErrorMessage, statusCode: number) {
+    super(message);
+    this.details = details;
     this.statusCode = statusCode;
     this.status = `${statusCode}`.startsWith('4') ? 'fail' : 'error';
     this.isOperational = true;
@@ -16,6 +17,8 @@ class AppError extends Error implements APIResponse {
     this.data = null;
 
     Error.captureStackTrace(this, this.constructor);
+    // Ensure stack is always a string
+    this.stack = this.stack || '';
   }
 }
 
