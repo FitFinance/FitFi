@@ -1,0 +1,16 @@
+- **[FitFi Overview](./README.md?id=what-is-fitfi)**
+  - [Introduction to FitFi](?id=what-is-fitfi)
+  - [Key Features](?id=key-features)
+  - [How FitFi Works](?id=how-fitfi-works)
+  - [Why FitFi?](?id=why-fitfi)
+- **[Backend Documentation](./backend.md?id=getting-started)**
+  - [Getting Started](./backend.md?id=getting-started)
+  - [Installation Steps](./backend.md?id=installation-steps)
+    - [Install Global Dependencies](./backend.md?id=install-global-dependencies)
+    - [List of Global Dependencies](./backend.md?id=list-of-global-dependencies)
+    - [Why Use Global Dependencies?](./backend.md?id=why-use-global-dependencies)
+  - [How to Verify Installation?](./backend.md?id=how-to-verify-installation)
+  - [Running the Backend](./backend.md?id=running-the-backend)
+    - [Development Mode](./backend.md?id=development-mode)
+    - [Production Mode](./backend.md?id=production-mode)
+  - [Troubleshooting Development Commands](./backend.md?id=troubleshooting-development-commands)
