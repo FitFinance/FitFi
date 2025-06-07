@@ -3,6 +3,7 @@ import catchAsync from '../../utils/catchAsync.js';
 import AppError from '../../utils/AppError.js';
 import User from '../../models/UserModel.js';
 import generateToken from '../../utils/generateToken.js';
+import sendResponse from '../../utils/sendResponse.js';
 
 // Dummy ethers
 type Ethers = {
@@ -46,11 +47,23 @@ const verifyAndLogin: fn = catchAsync(
     const user: IUser | null = await User.findOne({
       walletAddress: normalizedAddress,
     });
-
     if (!user) {
-      return res
-        .status(400)
-        .json({ error: 'Wallet not found. Please request nonce first.' });
+      const response: IErrorMessage = {
+        title: 'Wallet not found',
+        description: 'Wallet not found. Please request nonce first.',
+        context: {
+          values: {
+            walletAddress: `${walletAddress}`,
+          },
+        },
+      };
+      return next(
+        new AppError(
+          'Wallet not found. Please request nonce first.',
+          response,
+          400
+        )
+      );
     }
 
     const message: string = `Nonce: ${user.nonce}`;
@@ -58,13 +71,37 @@ const verifyAndLogin: fn = catchAsync(
     try {
       recoveredAddress = ethers.utils.verifyMessage(message, signature);
     } catch (err) {
-      return res.status(401).json({ error: 'Signature verification failed' });
+      const response: IErrorMessage = {
+        title: 'Signature verification failed',
+        description: 'The provided signature could not be verified.',
+        context: {
+          values: {
+            walletAddress: `${walletAddress}`,
+            signature: `${signature}`,
+          },
+        },
+      };
+      return next(new AppError('Signature verification failed', response, 401));
     }
 
     if (recoveredAddress.toLowerCase() !== normalizedAddress) {
-      return res
-        .status(401)
-        .json({ error: 'Invalid signature for given wallet address' });
+      const response: IErrorMessage = {
+        title: 'Invalid signature',
+        description: 'Invalid signature for given wallet address.',
+        context: {
+          values: {
+            walletAddress: `${walletAddress}`,
+            signature: `${signature}`,
+          },
+        },
+      };
+      return next(
+        new AppError(
+          'Invalid signature for given wallet address',
+          response,
+          401
+        )
+      );
     }
 
     // Update nonce to prevent replay attacks
@@ -77,13 +114,25 @@ const verifyAndLogin: fn = catchAsync(
     );
     if (!token) return;
 
-    return res.json({
-      token,
-      user: {
-        _id: user._id,
-        walletAddress: user.walletAddress,
+    const response: APIResponse = {
+      message: 'Login successful',
+      details: {
+        title: 'Successfully logged in',
+        description: 'You were able to login succssfully',
       },
-    });
+      status: 'success',
+      statusCode: 200,
+      success: true,
+      data: {
+        token,
+        user: {
+          _id: user._id,
+          walletAddress: user.walletAddress,
+        },
+      },
+    };
+
+    return sendResponse(res, response);
   }
 );
 
