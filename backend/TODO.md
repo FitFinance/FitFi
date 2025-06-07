@@ -1,4 +1,6 @@
-# TODO List
+# TODO List (Deprecated)
+
+> Moved to GitHub actions
 
 This is a list of tasks, features, and improvements that need to be addressed in the backend of the project. Each item is categorized by its type and includes a brief description.
 
