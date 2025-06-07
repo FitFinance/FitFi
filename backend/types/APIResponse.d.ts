@@ -1,8 +1,17 @@
+type TStatus = 'error' | 'success' | 'warning' | 'fail';
+
+interface IErrorMessage {
+  title: string;
+  description: string;
+  context?: any;
+}
+
 interface APIResponse {
-  message: {
-    title: string;
-    description: string;
-  };
+  message?: string;
+  details: IErrorMessage;
   success: boolean;
-  data: any;
+  status: TStatus;
+  statusCode?: number;
+  data?: any;
+  stack?: Error['stack'];
 }
