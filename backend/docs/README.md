@@ -1,7 +1,7 @@
 # Introduction to FitFi
 
 <span style="color: red; font-weight: bold;font-size: 12px;">
-This is an AI generated documentation that needs to be changed in future.
+This is an AI generated documentation that needs to be changed in future. (This section only i.e. FitFi Overview)
 </span>
 
 ## Other Links
