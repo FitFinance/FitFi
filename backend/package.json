@@ -7,7 +7,8 @@
     "preinstall": "npm i docsify-cli -g && npm i nodemon -g && npm i concurrently -g && npm i eslint -g && npm i prettier -g",
     "start": "cross-env NODE_ENV=production node ./dist/server.js",
     "build": "tsc",
-    "dev": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"nodemon dist/server.js\""
+    "dev": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"nodemon dist/server.js\"",
+    "docs": "docsify serve docs"
   },
   "keywords": [],
   "author": "",
