@@ -35,12 +35,33 @@ const requestNonce: fn = catchAsync(
       user.nonce = Math.floor(Math.random() * 1000000).toString();
       await user.save();
     }
-
     if (!user) {
-      return res.status(500).json({ error: 'User not found after creation' });
+      return res.status(500).json({
+        success: false,
+        message: 'User not found after creation',
+        data: null,
+        error: {
+          title: 'User Creation Failed',
+          description: 'User could not be found after creation attempt.',
+          context: {
+            1: 'User.create returned null or undefined',
+            2: 'Possible database issue or validation error',
+          },
+        },
+      });
     }
-
-    return res.json({ nonce: user.nonce });
+    return res.status(200).json({
+      message: 'Nonce generated successfully',
+      details: {
+        title: 'Nonce Generated',
+        description:
+          'A nonce has been generated for the provided wallet address.',
+      },
+      success: true,
+      status: 'success',
+      statusCode: 200,
+      data: { nonce: user.nonce },
+    });
   }
 );
 

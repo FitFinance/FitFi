@@ -38,7 +38,7 @@ All backend routes currently use the `/api/v1` prefix, indicating that these end
         <td></td>
     </tr>
     <tr>
-        <td></td>
+        <td><a href="/#/./auth.md">Auth</a></td>
         <td><code>POST</code></td>
         <td><code>/api/v1/auth/verify-and-login</code></td>
         <td>Used to Login and Signup</td>
