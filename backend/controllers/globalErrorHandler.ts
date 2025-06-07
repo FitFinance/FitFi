@@ -27,15 +27,17 @@ function sendErrorDev(err: AppError, _: Request, res: Response) {
   return res.status(err.statusCode).json(response);
 }
 
+// ! Do not remove next function even though it is not being used
 function globalErrorHandler(
   err: AppError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ) {
+  // console.log('Received error', err);
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
-
+  // console.log(process.env.NODE_ENV);
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, req, res);
   } else if (process.env.NODE_ENV === 'production') {
@@ -48,7 +50,6 @@ function globalErrorHandler(
 
     sendErrorProd(err, req, res);
   }
-  next();
 }
 
 export default globalErrorHandler;
