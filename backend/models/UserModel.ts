@@ -19,7 +19,7 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
   },
   username: {
     type: String,
-    required: true,
+    required: false,
     unique: false, // walletAddress is already unique so no need to make this uique
   },
 });

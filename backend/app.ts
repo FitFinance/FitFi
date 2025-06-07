@@ -12,6 +12,8 @@ dotenv.config({
 const app: express.Express = express();
 
 app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.get('/api/v1', (_: Request, res: Response) => {
   const statusCode: number = 200;

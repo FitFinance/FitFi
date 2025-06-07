@@ -3,6 +3,8 @@ import AppError from './AppError.js';
 import { NextFunction } from 'express';
 
 async function generateToken(userId: string, next: NextFunction) {
+  console.log(process.env.JWT_SECRET);
+
   const token: string | undefined = process.env?.JWT_TOKEN;
   if (!token) {
     return next(

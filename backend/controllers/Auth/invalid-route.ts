@@ -13,9 +13,9 @@ const invalidRoute: fn = catchAsync(
       },
       success: false,
       status: 'error',
-      statusCode: 204,
+      statusCode: 404,
     };
-    sendResponse(res, response);
+    return sendResponse(res, response);
   }
 );
 

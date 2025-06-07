@@ -34,10 +34,9 @@ function globalErrorHandler(
   res: Response,
   _next: NextFunction
 ) {
-  // console.log('Received error', err);
   err.statusCode = err.statusCode || 500;
   err.status = err.status || 'error';
-  // console.log(process.env.NODE_ENV);
+
   if (process.env.NODE_ENV === 'development') {
     sendErrorDev(err, req, res);
   } else if (process.env.NODE_ENV === 'production') {

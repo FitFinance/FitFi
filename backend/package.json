@@ -5,16 +5,18 @@
   "type": "module",
   "scripts": {
     "preinstall": "npm i docsify-cli -g && npm i nodemon -g && npm i concurrently -g && npm i eslint -g && npm i prettier -g",
-    "start": "node dist/server.js",
+    "start": "cross-env NODE_ENV=production node ./dist/server.js",
     "build": "tsc",
-    "dev": "concurrently \"tsc --watch\" \"nodemon dist/server.js\""
+    "dev": "cross-env NODE_ENV=development concurrently \"tsc --watch\" \"nodemon dist/server.js\""
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "chalk": "^5.4.1",
     "cors": "^2.8.5",
+    "cross-env": "^7.0.3",
     "dotenv": "^16.5.0",
     "express": "~5.1.0",
     "jsonwebtoken": "^9.0.2",
