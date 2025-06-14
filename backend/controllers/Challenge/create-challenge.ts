@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync.js';
 
-const createChallenge: fn = catchAsync(async (req: Request, res: Response) => {
+const createChallenge: fn = catchAsync(async (_: Request, res: Response) => {
   const response: APIResponse = {
     message: 'This endpoint is not implemented yet.',
     details: {

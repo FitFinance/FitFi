@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { JwtPayload } from 'jsonwebtoken';
 import sendResponse from '../utils/sendResponse.js';
 import catchAsync from '../utils/catchAsync.js';
+import User from '../models/UserModel.js';
 
 const authenticate: fn = catchAsync(
-  (req: Request, res: Response, next: NextFunction) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     const authHeader: string | undefined = req.headers.authorization;
     const response: APIResponse = {
       message: 'Authentication failed',
@@ -25,18 +26,24 @@ const authenticate: fn = catchAsync(
 
     try {
       const secret: string = process.env.JWT_SECRET || 'your_jwt_secret';
-      const decoded: { role?: string } = jwt.verify(token, secret) as {
-        role?: string;
-      };
+      const userId: string | JwtPayload = jwt.verify(token, secret);
 
-      if (!decoded.role) {
+      if (!userId) {
         response.details.title = 'Forbidden';
-        response.details.description = 'User role not found in token.';
+        response.details.description = 'User ID not found in token.';
         response.statusCode = 403;
-        response.message = 'Forbidden: User role not found.';
+        response.message = 'Forbidden: User ID not found.';
         return sendResponse(res, response);
       }
-      (req as any).role = decoded.role;
+      const user: IUser = await User.findById(userId).select('-password');
+      if (!user) {
+        response.details.title = 'User Not Found';
+        response.details.description = 'No user found with the provided token.';
+        response.statusCode = 404;
+        response.message = 'User not found.';
+        return sendResponse(res, response);
+      }
+      (req as any).user = user;
       next();
     } catch (err) {
       response.details.title = 'Invalid Token';
