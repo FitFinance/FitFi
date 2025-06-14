@@ -11,6 +11,13 @@ declare global {
     // profilePicture?: string;
     isActive?: boolean;
     lastLogin?: Date;
+    role: 'user' | 'admin'; // Default role is 'user', can be 'admin'
     // roles?: string[];
+  }
+
+  interface IChallenge extends Document {
+    amount: number;
+    unit: 'Steps' | 'Calories' | 'Distance';
+    target: number;
   }
 }

@@ -22,6 +22,12 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     required: false,
     unique: false, // walletAddress is already unique so no need to make this uique
   },
+  role: {
+    type: String,
+    enum: ['user', 'admin'],
+    required: true,
+    default: 'user',
+  },
 });
 
 const User: Model<IUser> = mongoose.model<IUser>('User', userSchema);

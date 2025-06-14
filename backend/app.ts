@@ -1,8 +1,12 @@
-import express, { NextFunction, Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
-import AppError from './utils/AppError.js';
 import globalErrorHandler from './controllers/globalErrorHandler.js';
-import AuthRoutes from './routes/Auth.js';
+
+import AuthRoutes from './routes/AuthRoutes.js';
+
+import invalidRouteHandler from './middleware/invalid-route.js';
+import defaultApiResponse from './middleware/default-api-response.js';
+import challengeRoutes from './routes/ChallengeRoutes.js';
 
 const app: express.Express = express();
 
@@ -10,38 +14,15 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/api/v1', (_: Request, res: Response) => {
-  const statusCode: number = 200;
-  const response: APIResponse = {
-    message: 'Welcome to FitFi API',
-    details: {
-      title: 'FitFi Backend API',
-      description:
-        'This is a welcome message to test whether the API is working or not.',
-    },
-    success: true,
-    status: 'success',
-    statusCode: statusCode,
-    data: null,
-  };
-  res.status(statusCode).json(response);
-});
+const primaryRouter: express.Router = express.Router();
 
-app.use('/api/v1/auth', AuthRoutes);
+primaryRouter.get('/', defaultApiResponse);
+primaryRouter.use('/auth', AuthRoutes);
+primaryRouter.use('/challenges', challengeRoutes);
 
-app.all('/{*any}', (req: Request, _: Response, next: NextFunction) => {
-  return next(
-    new AppError(
-      `There is no route '${req.originalUrl}'`,
-      {
-        title: 'Invalid Route',
-        description:
-          'You are trying to reach a route that is not present on the backend please recheck for any typo in the string',
-      },
-      404
-    )
-  );
-});
+app.use('/api/v1', primaryRouter);
+
+app.all('/{*any}', invalidRouteHandler);
 
 app.use(globalErrorHandler);
 
