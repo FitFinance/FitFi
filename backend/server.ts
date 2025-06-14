@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import './utils/setup-env.js';
 
 const originalConsoleLog: (...args: unknown[]) => void = console.log;
 console.log = (...args: unknown[]) => {

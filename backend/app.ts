@@ -1,13 +1,8 @@
 import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import AppError from './utils/AppError.js';
 import globalErrorHandler from './controllers/globalErrorHandler.js';
 import AuthRoutes from './routes/Auth.js';
-
-dotenv.config({
-  path: ['./.env', './secrets.env'],
-});
 
 const app: express.Express = express();
 
