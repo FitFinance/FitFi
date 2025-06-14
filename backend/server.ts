@@ -1,13 +1,8 @@
 import chalk from 'chalk';
 import './utils/setup-env.js';
-
-const originalConsoleLog: (...args: unknown[]) => void = console.log;
-console.log = (...args: unknown[]) => {
-  originalConsoleLog(chalk.bgMagentaBright.black('APP: '), ...args);
-};
-
+import './utils/console-color.js';
 import app from './app.js';
-import './utils/connect-db.js'; // IEFE function to connect to DB
+import './utils/connect-db.js';
 
 const PORT: number = Number(process.env?.PORT) || 3000;
 
