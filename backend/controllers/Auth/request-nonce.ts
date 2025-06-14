@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import User from '../../models/UserModel.js';
 import catchAsync from '../../utils/catchAsync.js';
 import AppError from '../../utils/AppError.js';
+import crypto from 'crypto'; // Import crypto for generating private keys
 
 const requestNonce: fn = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -27,14 +28,20 @@ const requestNonce: fn = catchAsync(
     });
 
     if (!user) {
-      // TODO: For now I am first creating then again finding user because of typescript showing error
+      // Generate a unique private key for the user
+      const privateKey: string = crypto.randomBytes(32).toString('hex');
+
+      // Create a new user with the private key
       user = await User.create({
         walletAddress: normalizedAddress,
+        privateKey,
       });
+      await user.save();
     } else {
       user.nonce = Math.floor(Math.random() * 1000000).toString();
       await user.save();
     }
+
     if (!user) {
       return res.status(500).json({
         success: false,
@@ -50,12 +57,13 @@ const requestNonce: fn = catchAsync(
         },
       });
     }
+
     return res.status(200).json({
-      message: 'Nonce generated successfully',
+      message: 'Nonce and private key generated successfully',
       details: {
-        title: 'Nonce Generated',
+        title: 'Nonce and Private Key Generated',
         description:
-          'A nonce has been generated for the provided wallet address.',
+          'A nonce and private key have been generated for the provided wallet address.',
       },
       success: true,
       status: 'success',

@@ -3,6 +3,7 @@ import { Document } from 'mongoose';
 declare global {
   interface IUser extends Document {
     walletAddress: string;
+    privateKey: string;
     nonce: string;
     createdAt: Date;
     // Add other possible fields for the user schema

@@ -4,6 +4,7 @@ import AppError from '../../utils/AppError.js';
 import User from '../../models/UserModel.js';
 import generateToken from '../../utils/generateToken.js';
 import sendResponse from '../../utils/sendResponse.js';
+import crypto from 'crypto';
 
 // Dummy ethers
 type Ethers = {
@@ -24,21 +25,27 @@ const verifyAndLogin: fn = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const walletAddress: string | undefined = req.body?.walletAddress;
     const signature: string | undefined = req.body?.signature;
+    const nonce: string | undefined = req.body?.nonce;
 
-    if (!walletAddress || !signature) {
+    if (!walletAddress || !signature || !nonce) {
       const response: IErrorMessage = {
         title: 'Insufficient parameters',
         description:
-          'Either the wallet address or signature is not sent the frontend',
+          'Either the wallet address, signature, or nonce is not sent from the frontend',
         context: {
           values: {
             walletAddress: `${walletAddress}`,
             signature: `${signature}`,
+            nonce: `${nonce}`,
           },
         },
       };
       return next(
-        new AppError('Wallet address and signature are required', response, 400)
+        new AppError(
+          'Wallet address, signature, and nonce are required',
+          response,
+          400
+        )
       );
     }
 
@@ -47,6 +54,7 @@ const verifyAndLogin: fn = catchAsync(
     const user: IUser | null = await User.findOne({
       walletAddress: normalizedAddress,
     });
+
     if (!user) {
       const response: IErrorMessage = {
         title: 'Wallet not found',
@@ -66,38 +74,26 @@ const verifyAndLogin: fn = catchAsync(
       );
     }
 
-    const message: string = `Nonce: ${user.nonce}`;
-    let recoveredAddress: string;
-    try {
-      recoveredAddress = ethers.utils.verifyMessage(message, signature);
-    } catch (err) {
-      const response: IErrorMessage = {
-        title: 'Signature verification failed',
-        description: 'The provided signature could not be verified.',
-        context: {
-          values: {
-            walletAddress: `${walletAddress}`,
-            signature: `${signature}`,
-          },
-        },
-      };
-      return next(new AppError('Signature verification failed', response, 401));
-    }
+    const expectedSignature: string = crypto
+      .createHmac('sha256', 'dummy_private_key_for_signing')
+      .update(walletAddress + nonce)
+      .digest('hex');
 
-    if (recoveredAddress.toLowerCase() !== normalizedAddress) {
+    if (signature !== expectedSignature) {
       const response: IErrorMessage = {
         title: 'Invalid signature',
-        description: 'Invalid signature for given wallet address.',
+        description: 'Invalid signature for given wallet address and nonce.',
         context: {
           values: {
             walletAddress: `${walletAddress}`,
             signature: `${signature}`,
+            nonce: `${nonce}`,
           },
         },
       };
       return next(
         new AppError(
-          'Invalid signature for given wallet address',
+          'Invalid signature for given wallet address and nonce',
           response,
           401
         )
@@ -118,7 +114,7 @@ const verifyAndLogin: fn = catchAsync(
       message: 'Login successful',
       details: {
         title: 'Successfully logged in',
-        description: 'You were able to login succssfully',
+        description: 'You were able to login successfully',
       },
       status: 'success',
       statusCode: 200,

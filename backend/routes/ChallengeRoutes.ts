@@ -6,6 +6,7 @@ import authorize from '../middleware/authorize.js';
 
 const ChallengeRoutes: express.Router = express.Router();
 
-ChallengeRoutes.get('/', getChallenges);
+ChallengeRoutes.get('/', authenticate, getChallenges);
 ChallengeRoutes.post('/', authenticate, authorize('admin'), createChallenge);
+
 export default ChallengeRoutes;
