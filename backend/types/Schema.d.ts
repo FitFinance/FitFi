@@ -17,8 +17,18 @@ declare global {
   }
 
   interface IChallenge extends Document {
-    amount: number;
-    unit: 'Steps' | 'Calories' | 'Distance';
     target: number;
+    unit: 'steps' | 'calories' | 'distance';
+    bettingAmount: number;
+    createdAt: Date;
+  }
+  interface IDuels extends Document {
+    user1: IUser['_id'];
+    user2: IUser['_id'] | null; // user2 can be null if the duel is not yet accepted
+    challenge: IChallenge['_id'];
+    status: 'searching' | 'accepted' | 'cancelled' | 'completed' | 'confirming'; // confirming is used when a duel is matched and waiting for confirmation
+    winner: IUser['_id'] | null;
+    createdAt: Date;
+    updatedAt: Date;
   }
 }
