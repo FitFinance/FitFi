@@ -30,7 +30,7 @@ DuelRoutes.patch(
 DuelRoutes.patch(
   '/:duelId/reject',
   authenticate,
-  authorize('user'),
+  authorize('user', 'admin'),
   (req: any, res: any, next: any) => {
     // Logic for rejecting a duel
     // User sends the duel ID
