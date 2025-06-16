@@ -1,5 +1,8 @@
 import express from 'express';
 import cors from 'cors';
+
+// ! Check if having any of these middlewares cause disruption in the working of app
+// ! something like blocking body of the request
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
@@ -32,10 +35,10 @@ app.use(express.urlencoded({ extended: true }));
 
 const primaryRouter: express.Router = express.Router();
 
-primaryRouter.get('/', defaultApiResponse);
 primaryRouter.use('/auth', AuthRoutes);
 primaryRouter.use('/challenges', ChallengeRoutes);
 primaryRouter.use('/duels', DuelRoutes);
+primaryRouter.get('/', defaultApiResponse);
 app.use('/api/v1', primaryRouter);
 
 app.all('*', invalidRouteHandler);
