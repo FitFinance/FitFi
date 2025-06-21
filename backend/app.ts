@@ -5,8 +5,8 @@ import cors from 'cors';
 // ! something like blocking body of the request
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
-import mongoSanitize from 'express-mongo-sanitize';
-import xss from 'xss-clean';
+// import mongoSanitize from 'express-mongo-sanitize';
+// import xss from 'xss-clean';
 
 import AuthRoutes from './routes/AuthRoutes.js';
 import ChallengeRoutes from './routes/ChallengeRoutes.js';
@@ -26,8 +26,8 @@ app.use(
     message: 'Too many requests from this IP, please try again later.',
   })
 );
-app.use(mongoSanitize());
-app.use(xss());
+// app.use(mongoSanitize());
+// app.use(xss());
 
 app.use(cors());
 app.use(express.json());
@@ -41,7 +41,7 @@ primaryRouter.use('/duels', DuelRoutes);
 primaryRouter.get('/', defaultApiResponse);
 app.use('/api/v1', primaryRouter);
 
-app.all('*', invalidRouteHandler);
+app.all('{*any}', invalidRouteHandler);
 
 app.use(globalErrorHandler);
 

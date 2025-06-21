@@ -4,7 +4,7 @@ import User from '../models/UserModel.js';
 
 const authenticate: fn = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const userId: string | undefined = req.headers['user-id'] as string;
+    const userId: string | undefined = req.body.userId as string | undefined;
     const user: IUser | null = await User.findById(userId);
     if (!user) {
       return res.status(401).json({

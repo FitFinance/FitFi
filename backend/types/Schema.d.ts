@@ -3,16 +3,15 @@ import { Document } from 'mongoose';
 declare global {
   interface IUser extends Document {
     walletAddress: string;
-    privateKey: string;
     nonce: string;
     createdAt: Date;
     // Add other possible fields for the user schema
-    username: string;
+    username?: string;
     email?: string;
     // profilePicture?: string;
     isActive?: boolean;
     lastLogin?: Date;
-    role: 'user' | 'admin'; // Default role is 'user', can be 'admin'
+    role?: 'user' | 'admin'; // Default role is 'user', can be 'admin'
     // roles?: string[];
   }
 
@@ -28,6 +27,8 @@ declare global {
     challenge: IChallenge['_id'];
     status: 'searching' | 'accepted' | 'cancelled' | 'completed' | 'confirming'; // confirming is used when a duel is matched and waiting for confirmation
     winner: IUser['_id'] | null;
+    user1Score: number;
+    user2Score: number;
     createdAt: Date;
     updatedAt: Date;
   }

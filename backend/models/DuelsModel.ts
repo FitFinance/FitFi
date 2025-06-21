@@ -37,6 +37,14 @@ const duelsSchema: Schema<IDuels> = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    user1Score: {
+      type: Number,
+      default: 0, // Default score for user1
+    },
+    user2Score: {
+      type: Number,
+      default: 0, // Default score for user2
+    },
   },
   {
     timestamps: true,

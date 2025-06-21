@@ -17,18 +17,20 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
-  username: {
-    type: String,
-    required: false,
-    unique: false, // walletAddress is already unique so no need to make this uique
-  },
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    required: true,
-    default: 'user',
-  },
+  // username: {
+  //   type: String,
+  //   required: false,
+  //   unique: false, // walletAddress is already unique so no need to make this uique
+  // },
+  // role: {
+  //   type: String,
+  //   enum: ['user', 'admin'],
+  //   required: true,
+  //   default: 'user',
+  // },
 });
+
+userSchema.index({ walletAddress: 1 });
 
 const User: Model<IUser> = mongoose.model<IUser>('User', userSchema);
 
