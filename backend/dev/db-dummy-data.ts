@@ -15,7 +15,7 @@ const users: Partial<IUser>[] = [
     nonce: 871263,
     createdAt: new Date(),
     username: 'Arnav',
-    role: 'user',
+    role: 'admin',
   },
   {
     walletAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
