@@ -93,7 +93,7 @@ const verifyAndLogin: fn = catchAsync(
     await user.save();
 
     console.log(user._id);
-    const token: string | void = generateToken(user._id as string, next);
+    const token: string | void = generateToken(user._id as string, req);
     if (!token) {
       // # Don't think this code section will ever be used but for safetly I have added it here
       // don't remove
