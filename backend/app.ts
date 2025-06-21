@@ -1,52 +1,47 @@
-import express, { NextFunction, Request, Response } from 'express';
+import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-import AppError from './utils/AppError.js';
-import globalErrorHandler from './controllers/globalErrorHandler.js';
-import AuthRoutes from './routes/Auth.js';
 
-dotenv.config({
-  path: ['./.env', './secrets.env'],
-});
+// ! Check if having any of these middlewares cause disruption in the working of app
+// ! something like blocking body of the request
+import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
+// import mongoSanitize from 'express-mongo-sanitize';
+// import xss from 'xss-clean';
+
+import AuthRoutes from './routes/AuthRoutes.js';
+import ChallengeRoutes from './routes/ChallengeRoutes.js';
+import DuelRoutes from './routes/DuelRoutes.js';
+
+import invalidRouteHandler from './middleware/invalid-route.js';
+import globalErrorHandler from './controllers/globalErrorHandler.js';
+import defaultApiResponse from './middleware/default-api-response.js';
 
 const app: express.Express = express();
+
+app.use(helmet());
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'Too many requests from this IP, please try again later.',
+  })
+);
+// app.use(mongoSanitize());
+// app.use(xss());
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/api/v1', (_: Request, res: Response) => {
-  const statusCode: number = 200;
-  const response: APIResponse = {
-    message: 'Welcome to FitFi API',
-    details: {
-      title: 'FitFi Backend API',
-      description:
-        'This is a welcome message to test whether the API is working or not.',
-    },
-    success: true,
-    status: 'success',
-    statusCode: statusCode,
-    data: null,
-  };
-  res.status(statusCode).json(response);
-});
+const primaryRouter: express.Router = express.Router();
 
-app.use('/api/v1/auth', AuthRoutes);
+primaryRouter.use('/auth', AuthRoutes);
+primaryRouter.use('/challenges', ChallengeRoutes);
+primaryRouter.use('/duels', DuelRoutes);
+primaryRouter.get('/', defaultApiResponse);
+app.use('/api/v1', primaryRouter);
 
-app.all('/{*any}', (req: Request, _: Response, next: NextFunction) => {
-  return next(
-    new AppError(
-      `There is no route '${req.originalUrl}'`,
-      {
-        title: 'Invalid Route',
-        description:
-          'You are trying to reach a route that is not present on the backend please recheck for any typo in the string',
-      },
-      404
-    )
-  );
-});
+app.all('{*any}', invalidRouteHandler);
 
 app.use(globalErrorHandler);
 

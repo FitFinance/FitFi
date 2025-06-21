@@ -6,6 +6,20 @@ services:
     container_name: fitfi-backend
     ports:
       - 3000:3000
+  redis:
+    image: redis:latest
+    container_name: fitfi-redis
+    ports:
+      - 6379:6379
+    volumes:
+      - redis_data:/data
+  mongo:
+    image: mongo:latest
+    container_name: fitfi-mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo_data:/data/db
   backend-docs:
     build:
       context: .
@@ -13,3 +27,9 @@ services:
     container_name: fitfi-backend-docs
     ports:
       - 3001:3001
+
+volumes:
+  redis_data:
+    driver: local
+  mongo_data:
+    driver: local

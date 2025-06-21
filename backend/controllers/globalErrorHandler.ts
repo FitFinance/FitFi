@@ -3,14 +3,29 @@ import { NextFunction, Request, Response } from 'express';
 
 function sendErrorProd(err: AppError, _: Request, res: Response) {
   // Send minimal error details in production
-  const response: APIResponse = {
-    message: err.message,
-    details: err.details,
-    success: err.success,
-    statusCode: err.statusCode,
-    status: err.status,
-    data: err.data,
-  };
+  let response: APIResponse;
+  if (!err?.isOperational) {
+    response = {
+      message: err.message,
+      details: err.details,
+      success: err.success,
+      statusCode: err.statusCode,
+      status: err.status,
+      data: err.data,
+    };
+  } else {
+    response = {
+      message: 'Something went very wrong!',
+      details: {
+        title: 'Internal Server Error',
+        description: 'An unexpected error occurred. Please try again later.',
+      },
+      success: false,
+      statusCode: 500,
+      status: 'error',
+      data: null,
+    };
+  }
   return res.status(err.statusCode).json(response);
 }
 
@@ -22,8 +37,9 @@ function sendErrorDev(err: AppError, _: Request, res: Response) {
     statusCode: err.statusCode,
     status: err.status,
     data: err.data,
-    stack: (err as any).stack,
+    stack: err.stack, // Include stack trace for debugging
   };
+
   return res.status(err.statusCode).json(response);
 }
 

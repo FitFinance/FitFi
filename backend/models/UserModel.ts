@@ -9,18 +9,24 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     lowercase: true,
   },
   nonce: {
-    type: String,
+    type: Number,
     required: true,
-    default: () => Math.floor(Math.random() * 1000000).toString(),
+    default: () => Math.floor(Math.random() * 1000000),
   },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  username: {
+  // username: {
+  //   type: String,
+  //   required: false,
+  //   unique: false, // walletAddress is already unique so no need to make this uique
+  // },
+  role: {
     type: String,
-    required: false,
-    unique: false, // walletAddress is already unique so no need to make this uique
+    enum: ['user', 'admin'],
+    required: true,
+    default: 'user',
   },
 });
 

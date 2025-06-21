@@ -55,7 +55,7 @@ import chalk from 'chalk';
     .then(() => {
       console.log(
         chalk.green('Success: ') +
-          chalk.cyan('Connected to MongoDB successfully.')
+          chalk.magenta('Connected to MongoDB successfully.')
       );
     })
     // CRITICAL: Unsafe area may cause type checking errors

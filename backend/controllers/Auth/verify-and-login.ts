@@ -1,134 +1,129 @@
 import { NextFunction, Request, Response } from 'express';
-import catchAsync from '../../utils/catchAsync.js';
-import AppError from '../../utils/AppError.js';
-import User from '../../models/UserModel.js';
-import generateToken from '../../utils/generateToken.js';
+
 import sendResponse from '../../utils/sendResponse.js';
-
-// Dummy ethers
-type Ethers = {
-  utils: {
-    verifyMessage: (message: string, signature: string) => string;
-  };
-};
-
-const ethers: Ethers = {
-  utils: {
-    verifyMessage: (message: string, _signature: string) => {
-      return message;
-    },
-  },
-};
+import catchAsync from '../../utils/catchAsync.js';
+import User from '../../models/UserModel.js';
+import AppError from '../../utils/AppError.js';
+import generateNDigitRandomNumber from '../../utils/generateNDigitRandomNumber.js';
+import generateToken from '../../utils/generateToken.js';
 
 const verifyAndLogin: fn = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
-    const walletAddress: string | undefined = req.body?.walletAddress;
-    const signature: string | undefined = req.body?.signature;
+    const signature: string | undefined = req.body.signature;
+    const walletAddress: string | undefined = req.body.walletAddress;
 
-    if (!walletAddress || !signature) {
-      const response: IErrorMessage = {
-        title: 'Insufficient parameters',
-        description:
-          'Either the wallet address or signature is not sent the frontend',
-        context: {
-          values: {
-            walletAddress: `${walletAddress}`,
-            signature: `${signature}`,
-          },
+    if (!signature || !walletAddress) {
+      const response: APIResponse = {
+        message: 'Missing signature or wallet address.',
+        details: {
+          title: 'Invalid Request',
+          description: 'Both signature and wallet address are required.',
         },
+        status: 'fail',
+        statusCode: 400,
+        success: false,
       };
-      return next(
-        new AppError('Wallet address and signature are required', response, 400)
-      );
+
+      sendResponse(res, response);
     }
 
-    const normalizedAddress: string = walletAddress.toLowerCase();
+    let user: IUser | null = await User.findOne({ walletAddress });
 
-    const user: IUser | null = await User.findOne({
-      walletAddress: normalizedAddress,
-    });
     if (!user) {
-      const response: IErrorMessage = {
-        title: 'Wallet not found',
-        description: 'Wallet not found. Please request nonce first.',
-        context: {
-          values: {
-            walletAddress: `${walletAddress}`,
+      const response: APIResponse = {
+        message:
+          'User with the provided wallet address was not found in the database.',
+        details: {
+          title: 'User Not Found',
+          description:
+            'No account exists for this wallet address. Please create an account first using the /auth/get-nonce route.',
+          context: {
+            step1:
+              'Call /auth/get-nonce to create a user if one does not already exist.',
+            step2:
+              'After creating the user, you can proceed to verify and login.',
           },
         },
+        success: false,
+        status: 'error',
+        statusCode: 404,
       };
-      return next(
-        new AppError(
-          'Wallet not found. Please request nonce first.',
-          response,
-          400
-        )
-      );
+      return sendResponse(res, response);
     }
 
-    const message: string = `Nonce: ${user.nonce}`;
-    let recoveredAddress: string;
+    let recoveredAddress: string | undefined;
+
+    // ? Will be used in future don't remove
+    // const nonce: string = `Nonce: ${user.nonce}`;
+
     try {
-      recoveredAddress = ethers.utils.verifyMessage(message, signature);
-    } catch (err) {
-      const response: IErrorMessage = {
-        title: 'Signature verification failed',
-        description: 'The provided signature could not be verified.',
-        context: {
-          values: {
-            walletAddress: `${walletAddress}`,
-            signature: `${signature}`,
-          },
-        },
-      };
-      return next(new AppError('Signature verification failed', response, 401));
-    }
-
-    if (recoveredAddress.toLowerCase() !== normalizedAddress) {
-      const response: IErrorMessage = {
-        title: 'Invalid signature',
-        description: 'Invalid signature for given wallet address.',
-        context: {
-          values: {
-            walletAddress: `${walletAddress}`,
-            signature: `${signature}`,
-          },
-        },
-      };
+      // recoveredAddress = some wallet function to recover address
+      // recoveredAddress = ethers.utils.verifyMessage(nonce, signature);
+      let num: number = generateNDigitRandomNumber(2);
+      if (num < 10) throw 'Fail';
+    } catch (err: any) {
       return next(
         new AppError(
-          'Invalid signature for given wallet address',
-          response,
+          'Signature verification failed',
+          {
+            title: 'Invalid Signature',
+            description:
+              'The provided signature could not be verified. Please ensure you are signing the correct nonce with your wallet.',
+          },
           401
         )
       );
     }
 
-    // Update nonce to prevent replay attacks
-    user.nonce = Math.floor(Math.random() * 1000000).toString();
+    if (recoveredAddress != user?.walletAddress) {
+      return next(
+        new AppError(
+          'Signature does not match the provided wallet address.',
+          {
+            title: 'Signature Mismatch',
+            description:
+              'The signature is valid, but it does not correspond to the given wallet address. Please ensure you are signing with the correct wallet.',
+          },
+          401
+        )
+      );
+    }
+
+    user.nonce = generateNDigitRandomNumber(6);
     await user.save();
+
     console.log(user._id);
-    const token: string | undefined | void = await generateToken(
-      String(user._id),
-      next
-    );
-    if (!token) return;
+    const token: string | void = generateToken(user._id as string, req);
+    if (!token) {
+      // # Don't think this code section will ever be used but for safetly I have added it here
+      // don't remove
+      const response: APIResponse = {
+        message: 'Failed to generate authentication token.',
+        details: {
+          title: 'Token Generation Error',
+          description:
+            'An error occurred while generating the authentication token. Please try again.',
+        },
+        success: false,
+        status: 'error',
+        statusCode: 500,
+      };
+      return sendResponse(res, response);
+    }
 
     const response: APIResponse = {
-      message: 'Login successful',
+      message: 'User was verified successfully',
       details: {
-        title: 'Successfully logged in',
-        description: 'You were able to login succssfully',
+        title: '',
+        description: '',
       },
+      success: true,
       status: 'success',
       statusCode: 200,
-      success: true,
       data: {
-        token,
-        user: {
-          _id: user._id,
-          walletAddress: user.walletAddress,
-        },
+        nonce: user.nonce,
+        walletAddress: user.walletAddress,
+        token: token,
       },
     };
 

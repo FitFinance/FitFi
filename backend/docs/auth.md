@@ -295,6 +295,31 @@ Used to log in or sign up a user by verifying their wallet address and signed me
     }
     ```
 
+## Flow 1
+
+### User Login or Signup Flow
+
+This flow describes the steps a user must follow to log in using their wallet address and signature.
+
+1. User connect wallet in the frontend via MetaMask (or decided wallet).
+2. User gets their wallet address.
+3. User calls the `/get-nonce` endpoint with their wallet address to retrieve a nonce for signing.
+4. User signs nonce using their wallet, this proves their ownership of the wallet.
+5. User sends the signed nonce (signature) along with their wallet address to the `/verify-and-login` endpoint. This will give user a JWT token if the signature is valid.
+6. User receives a JWT token, which can be used for authenticated requests to other endpoints.
+
+<!-- TODO: Implement -->
+<!-- The nonce is updated in the backend to prevent replay attacks. -->
+
+## Flow 2
+
+### Logout Flow
+
+This is a simple flow for logging out a user.
+
+1. User just removes the JWT token from their local storage or cookies.
+2. The backend does not require any specific logout endpoint since JWT tokens are stateless.
+
 ### Notes
 
 - The endpoint expects both `walletAddress` and `signature` in the request body.

@@ -1,68 +1,63 @@
-import { Request, Response, NextFunction } from 'express';
-import User from '../../models/UserModel.js';
+import { Request, Response } from 'express';
+import sendResponse from '../../utils/sendResponse.js';
 import catchAsync from '../../utils/catchAsync.js';
-import AppError from '../../utils/AppError.js';
+import User from '../../models/UserModel.js';
+import generateNDigitRandomNumber from '../../utils/generateNDigitRandomNumber.js';
 
-const requestNonce: fn = catchAsync(
-  async (req: Request, res: Response, next: NextFunction) => {
-    const walletAddress: string | undefined = req.body?.walletAddress;
-
-    if (!walletAddress) {
-      const response: IErrorMessage = {
+const requestNonce: fn = catchAsync(async (req: Request, res: Response) => {
+  const walletAddress: string | undefined = req.body.walletAddress;
+  if (!walletAddress) {
+    const response: APIResponse = {
+      message: 'Wallet address is required.',
+      details: {
         title: 'Missing Wallet Address',
         description:
-          'The wallet address field is required in the request body.',
-        context: {
-          1: 'walletAddress parameter is undefined or empty',
-          2: 'Client did not provide a wallet address for authentication',
-        },
-      };
-      return next(new AppError('Wallet Address not found', response, 400));
-    }
-
-    const normalizedAddress: string = walletAddress.toLowerCase();
-
-    let user: IUser | null = await User.findOne({
-      walletAddress: normalizedAddress,
-    });
-
-    if (!user) {
-      // TODO: For now I am first creating then again finding user because of typescript showing error
-      user = await User.create({
-        walletAddress: normalizedAddress,
-      });
-    } else {
-      user.nonce = Math.floor(Math.random() * 1000000).toString();
-      await user.save();
-    }
-    if (!user) {
-      return res.status(500).json({
-        success: false,
-        message: 'User not found after creation',
-        data: null,
-        error: {
-          title: 'User Creation Failed',
-          description: 'User could not be found after creation attempt.',
-          context: {
-            1: 'User.create returned null or undefined',
-            2: 'Possible database issue or validation error',
-          },
-        },
-      });
-    }
-    return res.status(200).json({
-      message: 'Nonce generated successfully',
-      details: {
-        title: 'Nonce Generated',
-        description:
-          'A nonce has been generated for the provided wallet address.',
+          'The request must include a valid wallet address in the body.',
       },
-      success: true,
-      status: 'success',
-      statusCode: 200,
-      data: { nonce: user.nonce },
-    });
+      success: false,
+      status: 'fail',
+      statusCode: 400,
+    };
+    return sendResponse(res, response);
   }
-);
+
+  let isNewUser: boolean = true;
+  let nonce: number = generateNDigitRandomNumber(6);
+
+  const user: IUser | null = await User.findOne({ walletAddress });
+
+  const response: APIResponse = {
+    message: 'User created and nonce generated successfully.',
+    details: {
+      title: 'New User',
+      description:
+        'A new user was created and a nonce was generated for authentication.',
+    },
+    success: false,
+    status: 'error',
+    statusCode: 200,
+    data: {
+      nonce: nonce,
+    },
+  };
+
+  if (user) {
+    isNewUser = false;
+  }
+
+  if (isNewUser) {
+    const newUser: IUser = await User.create({ walletAddress, nonce });
+    response.data.user = newUser;
+  } else {
+    response.message = 'Nonce regenerated successfully for existing user.';
+    response.details.title = 'Existing User';
+    response.details.description =
+      'A nonce was regenerated for the existing user for authentication.';
+
+    await User.updateOne({ walletAddress }, { $set: { nonce } });
+  }
+
+  sendResponse(res, response);
+});
 
 export default requestNonce;
