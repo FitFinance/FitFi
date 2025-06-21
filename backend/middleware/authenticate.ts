@@ -39,7 +39,7 @@ const authenticate: fn = catchAsync(
 
     let decoded: any;
     try {
-      decoded = jwt.verify(tokenVal, process.env.JWT_SECRET as string);
+      decoded = jwt.verify(tokenVal, (req as any).envs.JWT_SECRET as string);
     } catch (err) {
       return next(
         new AppError(

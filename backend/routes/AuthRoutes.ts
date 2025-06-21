@@ -10,7 +10,7 @@ const AuthRoutes: Router = express.Router();
 AuthRoutes.post('/get-nonce', requestNonce);
 AuthRoutes.post(
   '/verify-and-login',
-  validateRequiredEnvVariables('SECRET', 'TTL'),
+  validateRequiredEnvVariables('JWT_SECRET', 'JWT_TTL'),
   verifyAndLogin
 );
 
