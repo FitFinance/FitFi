@@ -1,33 +1,29 @@
-import jwt from 'jsonwebtoken';
+import jwt, { Secret } from 'jsonwebtoken';
 import AppError from './AppError.js';
 import { NextFunction } from 'express';
 
-async function generateToken(userId: string, next: NextFunction) {
-  console.log(process.env.JWT_SECRET);
+function generateToken(userId: string, next: NextFunction): string | void {
+  const SECRET: string | undefined = process.env.JWT_SECRET;
+  const TTL: string | undefined = process.env.JWT_TTL;
 
-  const token: string | undefined = process.env?.JWT_TOKEN;
-  if (!token) {
+  if (!SECRET || !TTL) {
     return next(
       new AppError(
-        'Unable to find JWT Secret',
+        'Unable to find JWT Secret or TTL',
         {
           title: 'Internal Server Error',
           description:
-            'We were not able to read the JWT Secret from the secrets file',
-          context: {
-            heading: 'This error could occur due to following reasons',
-            reasons: [
-              "'secrets.env' file is missing",
-              "App was not able to read 'secrets.env' either due to invalid dotenv configuration or due to error in file name",
-            ],
-          },
+            'We were not able to read the JWT Secret or TTL from the environment variables',
         },
         500
       )
     );
   }
 
-  return jwt.sign({ userId }, token, { expiresIn: '7d' });
+  // TODO: Unsafe code, check why TTL is not being taken as string input
+  return jwt.sign({ userId }, SECRET as Secret, {
+    expiresIn: TTL as any,
+  });
 }
 
 export default generateToken;
