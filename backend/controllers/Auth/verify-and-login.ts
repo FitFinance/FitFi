@@ -124,6 +124,8 @@ const verifyAndLogin: fn = catchAsync(
         token: token,
       },
     };
+
+    return sendResponse(res, response);
   }
 );
 

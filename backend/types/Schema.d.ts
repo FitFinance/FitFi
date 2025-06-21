@@ -11,7 +11,7 @@ declare global {
     // profilePicture?: string;
     isActive?: boolean;
     lastLogin?: Date;
-    role?: 'user' | 'admin'; // Default role is 'user', can be 'admin'
+    role: 'user' | 'admin'; // Default role is 'user', can be 'admin'
     // roles?: string[];
   }
 
