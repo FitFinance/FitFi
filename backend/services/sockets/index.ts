@@ -1,6 +1,7 @@
 import chalk from 'chalk';
 import { Server as HTTPServer } from 'node:http';
 import { Server as SocketServer, Socket } from 'socket.io';
+import registerSocketFunctions from './registerSocketFunctions.js';
 
 let io: SocketServer | undefined;
 
@@ -12,9 +13,7 @@ function initiateSocket(httpServer: HTTPServer): void {
     }
     io = new SocketServer(httpServer);
     io.on('connection', (socket: Socket) => {
-      console.log(
-        `Socket with socket ID: ${chalk.bgBlue(socket.id)} connected`
-      );
+      registerSocketFunctions(io, socket);
     });
     console.log(
       chalk.bgYellow(' SOCKETS '),
