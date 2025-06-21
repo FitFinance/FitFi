@@ -52,7 +52,9 @@ const verifyAndLogin: fn = catchAsync(
     }
 
     let recoveredAddress: string | undefined;
-    const nonce: string = `Nonce: ${user.nonce}`;
+
+    // ? Will be used in future don't remove
+    // const nonce: string = `Nonce: ${user.nonce}`;
 
     try {
       // recoveredAddress = some wallet function to recover address

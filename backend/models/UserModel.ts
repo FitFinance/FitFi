@@ -30,8 +30,6 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
   },
 });
 
-userSchema.index({ walletAddress: 1 });
-
 const User: Model<IUser> = mongoose.model<IUser>('User', userSchema);
 
 export default User;

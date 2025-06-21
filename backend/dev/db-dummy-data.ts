@@ -12,21 +12,21 @@ dotenv.config({
 const users: Partial<IUser>[] = [
   {
     walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
-    nonce: '871263',
+    nonce: 871263,
     createdAt: new Date(),
     username: 'Arnav',
     role: 'user',
   },
   {
     walletAddress: '0xabcdef1234567890abcdef1234567890abcdef12',
-    nonce: '123456',
+    nonce: 123456,
     createdAt: new Date(),
     username: 'Alice',
     role: 'user',
   },
   {
     walletAddress: '0x7890abcdef1234567890abcdef1234567890abcd',
-    nonce: '654321',
+    nonce: 654321,
     createdAt: new Date(),
     username: 'Bob',
     role: 'user',

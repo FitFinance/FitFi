@@ -1,17 +1,13 @@
 import chalk from 'chalk';
-import './utils/setup-env.js';
 import './utils/console-color.js';
+import './utils/setup-env.js';
 import app from './app.js';
 import './utils/connect-db.js';
 import { createServer, Server as HttpServer } from 'http';
-import { initializeSocket } from './utils/socketHandler.js';
 
 const PORT: number = Number(process.env?.PORT) || 3000;
 
 const httpServer: HttpServer = createServer(app);
-
-// Initialize socket.io
-initializeSocket(httpServer);
 
 httpServer.listen(PORT, () => {
   console.log(

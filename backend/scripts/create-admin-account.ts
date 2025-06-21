@@ -44,7 +44,7 @@ const walletAddress: string = '0x1234567890abcdef1234567890abcdef12345678';
 
   const user: Partial<IUser> = {
     walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
-    nonce: '871263',
+    nonce: 871263,
     createdAt: new Date(),
     username: 'admin',
     role: 'admin',
