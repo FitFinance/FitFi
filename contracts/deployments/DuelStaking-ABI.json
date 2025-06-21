@@ -1,0 +1,22 @@
+[
+  "constructor(address _platformAddress)",
+  "error OwnableInvalidOwner(address owner)",
+  "error OwnableUnauthorizedAccount(address account)",
+  "error ReentrancyGuardReentrantCall()",
+  "event DuelSettled(uint256 indexed duelId, address winner, address loser, uint256 winnerShare, uint256 platformShare, uint256 loserShare)",
+  "event OwnershipTransferred(address indexed previousOwner, address indexed newOwner)",
+  "event PlatformAddressUpdated(address oldAddress, address newAddress)",
+  "event StakePlaced(uint256 indexed duelId, address indexed user, uint256 amount)",
+  "event StakeRefunded(uint256 indexed duelId, address indexed user, uint256 amount)",
+  "function duelStakes(uint256, address) view returns (uint256)",
+  "function getStake(uint256 duelId, address user) view returns (uint256)",
+  "function getTotalDuelStakes(uint256 duelId, address user1, address user2) view returns (uint256)",
+  "function owner() view returns (address)",
+  "function platformAddress() view returns (address)",
+  "function refundStake(uint256 duelId, address user)",
+  "function renounceOwnership()",
+  "function setPlatformAddress(address _newPlatformAddress)",
+  "function settleDuel(uint256 duelId, address winner, address loser)",
+  "function stakeForDuel(uint256 duelId) payable",
+  "function transferOwnership(address newOwner)"
+]

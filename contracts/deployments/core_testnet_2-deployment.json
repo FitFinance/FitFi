@@ -1,0 +1,9 @@
+{
+  "contractAddress": "0x8796071429e599a1ec631258dF4aEceA18cB9F69",
+  "platformAddress": "0xFeA68598eEAd1Ae974A0Da5bcFAc197e9c165fE1",
+  "deployerAddress": "0xdA344FCAEc1F6E7F09d97A701C7436844F0deb95",
+  "network": "core_testnet_2",
+  "chainId": 1114,
+  "deploymentTime": "2025-06-14T16:03:36.887Z",
+  "transactionHash": "0x09dd3d72a318113f4fe3da59975ff76f3dd2bdb8501e7c9421320df78af26a1c"
+}
