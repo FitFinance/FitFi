@@ -15,9 +15,11 @@ declare global {
     // roles?: string[];
   }
 
+  type ChallengeUnits = 'steps' | 'calories' | 'distance';
+
   interface IChallenge extends Document {
     target: number;
-    unit: 'steps' | 'calories' | 'distance';
+    unit: ChallengeUnits;
     bettingAmount: number;
     createdAt: Date;
   }

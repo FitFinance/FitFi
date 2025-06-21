@@ -13,34 +13,6 @@ DuelRoutes.post(
   searchOpponent
 );
 
-// DuelRoutes.patch(
-//   '/:duelId/accept',
-//   authenticate,
-//   authorize('user'),
-//   (req: any, res: any, next: any) => {
-//     // Logic for accepting a duel
-//     // User sends the duel ID
-//     // If the duel exists and is in a state that can be accepted, it is accepted
-//     // Otherwise, an error is returned
-//     const duelId: string | undefined = req.params.duelId;
-//     res.status(200).json({ message: `Duel ${duelId} accepted successfully` });
-//   }
-// );
-
-// DuelRoutes.patch(
-//   '/:duelId/reject',
-//   authenticate,
-//   authorize('user', 'admin'),
-//   (req: any, res: any, next: any) => {
-//     // Logic for rejecting a duel
-//     // User sends the duel ID
-//     // If the duel exists and is in a state that can be rejected, it is rejected
-//     // Otherwise, an error is returned
-//     const duelId: string | undefined = req.params.duelId;
-//     res.status(200).json({ message: `Duel ${duelId} rejected successfully` });
-//   }
-// );
-
 DuelRoutes.patch(
   '/:duelId/update-status',
   authenticate,
