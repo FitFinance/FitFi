@@ -1,19 +1,19 @@
 import { createClient, RedisClientType } from 'redis';
 
-let redisclient: RedisClientType<any, any> | null = null;
+let redisClient: RedisClientType<any, any> | null = null;
 
-async function getRedisClient(): Promise<RedisClientType<any, any>> {
-  if (redisclient) {
-    return redisclient;
+async function getRedisClient(): Promise<RedisClientType> {
+  if (redisClient) {
+    return redisClient;
   }
 
-  redisclient = createClient({
+  redisClient = createClient({
     url: process.env.REDIS_URI,
     password: process.env.REDIS_PASS,
   });
-  await redisclient.connect();
+  await redisClient.connect();
 
-  return redisclient;
+  return redisClient;
 }
 
 export default getRedisClient;
