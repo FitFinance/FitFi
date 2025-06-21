@@ -9,8 +9,8 @@ import Duels from '../../models/DuelsModel.js';
 
 const searchOpponent: fn = async (req: Request, res: Response) => {
   const challengeId: string | undefined = req.body.challenegeId;
-  const user: IUser = req.body.user;
   const socketId: string | undefined = req.body.socketId;
+  const user: IUser = req.body.user;
 
   const redis: RedisClientType<any, any> = await getRedisClient();
   const io: Server = getIO();
@@ -114,8 +114,17 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
     await redis.del(`challenge:${duelObj.challengeId}`);
     await redis.sAdd(duelKey, duelObj);
 
-    io.to(duelKey).emit('confirm', 'Your match was confirmed');
+    io.to(duelKey).emit('confirm-match', 'Confirm your match on metamask');
+    // *************************************************************************
+    // *************************************************************************
+    // ***BLOCKCHAIN***
+    // *************************************************************************
+    // *************************************************************************
   }
 };
 
 export default searchOpponent;
+
+// TODO: Profile page
+// TODO: Active Duels
+// TODO: Set expiry on challenge:challengeId and start socket events for events that could occur
