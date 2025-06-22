@@ -51,6 +51,11 @@ const duelsSchema: Schema<IDuels> = new mongoose.Schema(
   }
 );
 
+duelsSchema.index({
+  user1: 1,
+  user2: 1,
+});
+
 const Duels: Model<IDuels> = mongoose.model<IDuels>('Duels', duelsSchema);
 
 export default Duels;
