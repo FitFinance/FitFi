@@ -22,6 +22,15 @@ const activeDuels: fn = catchAsync(async (req: Request, res: Response) => {
     : { createdAt: -1 };
 
   const winnerFilter: string | undefined = req.query.winner as string; // 'me' | 'other' | undefined
+  const statusFilter: string | undefined = req.query.status as string; // e.g. 'searching'
+  const allowedStatuses: string[] = [
+    'searching',
+    'accepted',
+    'cancelled',
+    'completed',
+    'confirming',
+  ];
+
   const filter: any = {
     $or: [{ user1: userId }, { user2: userId }],
   };
@@ -30,6 +39,10 @@ const activeDuels: fn = catchAsync(async (req: Request, res: Response) => {
     filter.winner = userId;
   } else if (winnerFilter === 'other') {
     filter.winner = { $ne: userId, $exists: true };
+  }
+
+  if (statusFilter && allowedStatuses.includes(statusFilter)) {
+    filter.status = statusFilter;
   }
 
   const totalDuels: number = await Duels.countDocuments(filter);
