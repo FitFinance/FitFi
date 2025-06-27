@@ -2,6 +2,7 @@ import chalk from 'chalk';
 import { Server as HTTPServer } from 'node:http';
 import { Server as SocketServer, Socket } from 'socket.io';
 import registerSocketFunctions from './registerSocketFunctions.js';
+import socketAuthMiddleware from './socketAuthMiddleware.js';
 
 let io: SocketServer | undefined;
 
@@ -12,6 +13,7 @@ function initiateSocket(httpServer: HTTPServer): void {
       return;
     }
     io = new SocketServer(httpServer);
+    io.use(socketAuthMiddleware);
     io.on('connection', (socket: Socket) => {
       registerSocketFunctions(io, socket);
     });
