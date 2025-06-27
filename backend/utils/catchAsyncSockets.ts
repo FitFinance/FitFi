@@ -7,19 +7,31 @@ function catchAsyncSockets(fn: socketFn): socketFn {
       Promise.resolve()
         .then(() => fn(io, socket))
         .catch((err: unknown) => {
-          console.error(
-            chalk.bgRed('ERROR'),
-            'Async error in socket function:'
-          );
-          socket.emit('error', 'An unexpected error occurred');
+          handleAsyncError(err, socket);
         });
     } catch (err: unknown) {
-      console.error(
-        chalk.bgRed('ERROR'),
-        'Synchronous error in socket function:'
-      );
-      socket.emit('error', 'An unexpected error occurred');
+      handleSyncError(err, socket);
     }
   };
 }
+
+function handleAsyncError(err: unknown, socket: Socket): void {
+  console.error(chalk.bgRed('ERROR'), 'Async error in socket function:', err);
+  const errorMessage: string =
+    typeof err === 'object' && err !== null && 'message' in err
+      ? (err as any).message
+      : 'An unexpected error occurred';
+  socket.emit('error', errorMessage);
+  setTimeout(() => socket.disconnect(), 100); // Ensure error is sent before disconnecting
+}
+
+function handleSyncError(err: unknown, socket: Socket): void {
+  console.error(
+    chalk.bgRed('ERROR'),
+    'Synchronous error in socket function:',
+    err
+  );
+  socket.emit('error', 'An unexpected error occurred');
+}
+
 export default catchAsyncSockets;

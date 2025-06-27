@@ -75,8 +75,8 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
     io.sockets.sockets.get(socketId)?.join(`duel:${duel._id}`);
 
     io.to(roomKey).emit(`Hi There, you have joined room ${roomKey}`);
-    io.to(roomKey).emit('duel_info', {
-      message: `You have joined room ${roomKey}`,
+    io.to(roomKey).emit('confirm_match', {
+      message: `You have joined room ${roomKey}, Please confirm your match, using confirm-match event`,
       duel: {
         id: duel._id,
         user1: duel.user1,
@@ -88,6 +88,12 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
         user1Score: duel.user1Score,
         user2Score: duel.user2Score,
       },
+    });
+
+    redis.hSet(`duel:${duel._id}:confirmedCount`, {
+      [String(duel.user1)]: 'undefined',
+      [String(duel.user2)]: 'undefined',
+      count: 0,
     });
   } else {
     const duel: string | null = await redis.sPop(challengeKey);
@@ -126,5 +132,5 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
 export default searchOpponent;
 
 // TODO: Profile page
-// TODO: Active Duels
+// TODO: Active Duels - DONE
 // TODO: Set expiry on challenge:challengeId and start socket events for events that could occur
