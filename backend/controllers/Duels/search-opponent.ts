@@ -47,9 +47,9 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
   }
 
   const challengeKey: string = `challenge:${challengeId}`;
-  const exists: boolean = Boolean(await redis.exists(challengeKey));
+  const isSomeoneSearching: boolean = Boolean(await redis.exists(challengeKey));
 
-  if (!exists) {
+  if (!isSomeoneSearching) {
     const duel: IDuels = await Duels.create({
       user1: user._id,
       user2: null,
@@ -60,8 +60,18 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
       user1Score: 0,
       user2Score: 0,
     });
+    // const redisDuel: { [key: string]: string | number } = {
+    //   user1: String(user._id),
+    //   user2: '',
+    //   challenge: String(challengeId),
+    //   status: 'searching',
+    //   winner: '',
+    //   user1Score: 0,
+    //   user2Score: 0,
+    // };
 
     const roomKey: string = `duel:${duel._id}`;
+    // await redis.hSet(`duel:${duel._id}`, redisDuel);
 
     await redis.sAdd(
       challengeKey,
@@ -69,7 +79,10 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
         user1: user._id,
         user2: null,
         duelId: duel._id,
+        winningScore: challenge.target,
         challengeId: challengeId,
+        user1Score: 0, // These both are added as they are required to create final duel object also
+        user2Score: 0,
       })
     );
     io.sockets.sockets.get(socketId)?.join(`duel:${duel._id}`);

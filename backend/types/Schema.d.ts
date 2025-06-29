@@ -1,18 +1,16 @@
 import { Document } from 'mongoose';
+import { Request } from 'express';
 
 declare global {
   interface IUser extends Document {
     walletAddress: string;
     nonce: number;
     createdAt: Date;
-    // Add other possible fields for the user schema
     username?: string;
     email?: string;
-    // profilePicture?: string;
     isActive?: boolean;
     lastLogin?: Date;
-    role: 'user' | 'admin'; // Default role is 'user', can be 'admin'
-    // roles?: string[];
+    role: 'user' | 'admin';
   }
 
   type ChallengeUnits = 'steps' | 'calories' | 'distance';
@@ -33,5 +31,9 @@ declare global {
     user2Score: number;
     createdAt: Date;
     updatedAt: Date;
+  }
+
+  interface CustomRequest extends Request {
+    user: IUser;
   }
 }
