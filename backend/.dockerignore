@@ -1,6 +1,5 @@
 dist
 node_modules
-./dev
 ./scripts
 ./dev
 ./.vscode
