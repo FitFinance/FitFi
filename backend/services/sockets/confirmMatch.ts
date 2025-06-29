@@ -29,7 +29,7 @@ const confirmMatch: socketFn = catchAsyncSockets(
     // Store the user's answer
     await redisClient.hSet(`duel:${duelId}:confirmedCount`, userId, answer);
 
-    // Set a 5-minute timer to auto-cancel if not already set
+    // Set a 30 seconds timer to auto-cancel if not already set
     const timerKey: string = `duel:${duelId}:confirmationTimer`;
     const timerExists: string | null = await redisClient.get(timerKey);
     if (!timerExists) {
@@ -54,7 +54,7 @@ const confirmMatch: socketFn = catchAsyncSockets(
             confirm: 'no',
           });
         }
-      }, 300000); // 5 minutes
+      }, 30000); // 30 seconds
     }
 
     // Get all users who have answered
