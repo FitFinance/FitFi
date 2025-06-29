@@ -4,13 +4,16 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: fitfi-backend
+    env_file:
+      - .evn
+      - secret.env
     ports:
       - 3000:3000
   redis:
     image: redis:latest
     container_name: fitfi-redis
     ports:
-      - 6379:6379
+      - 6378:6379
     volumes:
       - redis_data:/data
   mongo:
