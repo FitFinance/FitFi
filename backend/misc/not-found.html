@@ -6,124 +6,313 @@
     <title>404 Not Found</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        body {
-            background: radial-gradient(ellipse at top left, #3a86ff 0%, #23263a 100%);
-            color: #f1f1f1;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+        }
+
+        /* Floating particles animation */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            width: 2px;
+            height: 2px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            animation: float 8s infinite linear;
+        }
+
+        .particle:nth-child(1) {
+            left: 10%;
+            animation-delay: 0s;
+        }
+
+        .particle:nth-child(2) {
+            left: 20%;
+            animation-delay: 1s;
+        }
+
+        .particle:nth-child(3) {
+            left: 30%;
+            animation-delay: 2s;
+        }
+
+        .particle:nth-child(4) {
+            left: 40%;
+            animation-delay: 3s;
+        }
+
+        .particle:nth-child(5) {
+            left: 50%;
+            animation-delay: 4s;
+        }
+
+        .particle:nth-child(6) {
+            left: 60%;
+            animation-delay: 5s;
+        }
+
+        .particle:nth-child(7) {
+            left: 70%;
+            animation-delay: 6s;
+        }
+
+        .particle:nth-child(8) {
+            left: 80%;
+            animation-delay: 7s;
+        }
+
+        @keyframes float {
+            0% {
+                transform: translateY(100vh) rotate(0deg);
+                opacity: 0;
+            }
+
+            10% {
+                opacity: 1;
+            }
+
+            90% {
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-100vh) rotate(360deg);
+                opacity: 0;
+            }
         }
 
         .container {
             text-align: center;
-            padding: 3rem 4rem;
-            border-radius: 20px;
-            background: rgba(35, 38, 58, 0.95);
-            box-shadow: 0 8px 40px 0 rgba(58, 134, 255, 0.15), 0 2px 8px 0 rgba(0, 0, 0, 0.10);
+            padding: 4rem 3rem;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.02);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
             position: relative;
-            overflow: hidden;
+            z-index: 1;
+            animation: slideUp 0.8s ease-out;
+            max-width: 600px;
+            width: 90%;
         }
 
-        .glow {
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Glowing orb behind 404 */
+        .glow-orb {
             position: absolute;
-            top: -60px;
+            top: 20%;
             left: 50%;
             transform: translateX(-50%);
-            width: 220px;
-            height: 220px;
-            background: radial-gradient(circle, #3a86ff55 0%, transparent 70%);
-            z-index: 0;
-            pointer-events: none;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: pulse 4s ease-in-out infinite;
+            z-index: -1;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: translateX(-50%) scale(1);
+                opacity: 0.3;
+            }
+
+            50% {
+                transform: translateX(-50%) scale(1.2);
+                opacity: 0.1;
+            }
         }
 
         h1 {
-            font-size: 6rem;
+            font-size: 8rem;
+            font-weight: 100;
             margin: 0 0 1rem 0;
-            color: #3a86ff;
-            text-shadow: 0 4px 32px #3a86ff55, 0 2px 16px #1a237e44;
-            letter-spacing: 4px;
-            font-weight: 800;
-            z-index: 1;
+            color: #ffffff;
+            letter-spacing: 8px;
             position: relative;
+            animation: fadeIn 1s ease-out 0.3s both;
+            text-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         h2 {
-            margin: 0 0 1.2rem 0;
-            font-size: 2.2rem;
-            color: #f1f1f1;
-            font-weight: 600;
-            z-index: 1;
-            position: relative;
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin: 0 0 2rem 0;
+            color: rgba(255, 255, 255, 0.8);
+            letter-spacing: 2px;
+            animation: fadeIn 1s ease-out 0.6s both;
         }
 
         p {
-            color: #b0b3c6;
-            margin-bottom: 0;
-            font-size: 1.15rem;
-            z-index: 1;
-            position: relative;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 3rem;
+            animation: fadeIn 1s ease-out 0.9s both;
+            max-width: 480px;
+            margin-left: auto;
+            margin-right: auto;
         }
 
-        a {
+        code {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.9rem;
+        }
+
+        .btn {
             display: inline-block;
-            margin-top: 2.2rem;
             text-decoration: none;
-            color: #fff;
-            font-weight: bold;
-            border: none;
-            padding: 0.7rem 2.2rem;
-            border-radius: 8px;
-            background: linear-gradient(90deg, #3a86ff 0%, #4361ee 100%);
-            box-shadow: 0 2px 16px #3a86ff33;
-            font-size: 1.1rem;
+            color: #000000;
+            background: #ffffff;
+            padding: 1rem 2.5rem;
+            border-radius: 50px;
+            font-weight: 500;
+            font-size: 1rem;
             letter-spacing: 1px;
-            transition:
-                background 0.2s,
-                transform 0.15s,
-                box-shadow 0.2s;
-            z-index: 1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            overflow: hidden;
+            animation: fadeIn 1s ease-out 1.2s both;
+            border: 2px solid transparent;
         }
 
-        a:hover {
-            background: linear-gradient(90deg, #4361ee 0%, #3a86ff 100%);
-            transform: translateY(-2px) scale(1.04);
-            box-shadow: 0 4px 24px #3a86ff55;
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
         }
 
-        @media (max-width: 600px) {
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
             .container {
-                padding: 2rem 1rem;
+                padding: 3rem 2rem;
+                margin: 1rem;
             }
 
             h1 {
-                font-size: 3.5rem;
+                font-size: 5rem;
+                letter-spacing: 4px;
             }
 
             h2 {
-                font-size: 1.3rem;
+                font-size: 1.2rem;
+                letter-spacing: 1px;
             }
 
-            a {
-                font-size: 1rem;
-                padding: 0.6rem 1.2rem;
+            p {
+                font-size: 0.9rem;
+                margin-bottom: 2rem;
+            }
+
+            .btn {
+                padding: 0.8rem 2rem;
+                font-size: 0.9rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 4rem;
+            }
+
+            .container {
+                padding: 2rem 1.5rem;
             }
         }
     </style>
 </head>
 
 <body>
+    <!-- Floating particles -->
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+    </div>
+
     <div class="container">
-        <div class="glow"></div>
+        <div class="glow-orb"></div>
         <h1>404</h1>
-        <h2>Not a Webpage</h2>
-        <p style='max-width: 486px;'>This backend server only provides an API. If you're seeing this, you probably meant
-            to use the frontend app.
+        <h2>NOT A WEBPAGE</h2>
+        <p>
+            This backend server only provides an API. If you're seeing this, you probably
+            visited <code>https://localhost:3000</code>. Try visiting
+            <code>https://localhost:3000/api/v1</code> instead to access the API endpoints.
         </p>
-        <a href="https://localhost:3000/">Go to Frontend</a>
+        <a href="https://localhost:3000/" class="btn">GO TO FRONTEND</a>
     </div>
 </body>
 
