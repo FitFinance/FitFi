@@ -1,7 +1,7 @@
 {
-  "name": "contracts",
+  "name": "fitfi-contracts",
   "version": "1.0.0",
-  "description": "",
+  "description": "Smart contracts for FitFi - Move-to-Earn Fitness Platform",
   "main": "index.js",
   "scripts": {
     "compile": "npx hardhat compile",
@@ -9,15 +9,23 @@
     "build": "npx tsc",
     "deploy:localhost": "npx hardhat run scripts/deploy.ts --network localhost",
     "deploy:core-testnet": "npx hardhat run scripts/deploy.ts --network core_testnet",
+    "deploy:core-testnet-2": "npx hardhat run scripts/deploy-core-testnet-2.js --network core_testnet_2",
+    "deploy:direct-commit": "npx hardhat run scripts/deploy-direct-commit.ts --network core_testnet_2",
     "verify:core-testnet": "npx hardhat run scripts/verify.ts --network core_testnet",
+    "verify:core-testnet-2": "npx hardhat run scripts/testnet-verify.ts --network core_testnet_2",
     "interact:localhost": "npx hardhat run scripts/interact.ts --network localhost",
     "interact:core-testnet": "npx hardhat run scripts/interact.ts --network core_testnet",
+    "test:direct-commit": "node scripts/test-direct-commit.js",
+    "test:comprehensive": "node scripts/test-direct-commit.js",
     "node": "npx hardhat node",
-    "clean": "npx hardhat clean && rm -rf dist"
+    "clean": "npx hardhat clean && rm -rf dist",
+    "test:coverage": "npx hardhat coverage",
+    "lint": "npx hardhat check",
+    "format": "npx prettier --write 'contracts/**/*.sol'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "keywords": ["blockchain", "fitness", "move-to-earn", "core", "smart-contracts", "defi"],
+  "author": "FitFi Team",
+  "license": "MIT",
   "type": "commonjs",
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.9",
