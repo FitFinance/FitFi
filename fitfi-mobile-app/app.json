@@ -37,6 +37,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7e306bd0-cdee-419e-b63c-14d2d5e8a383"
+      }
+    },
+    "owner": "halleys"
   }
 }
