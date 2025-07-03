@@ -128,19 +128,129 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
     const duelId: string = duelObj.duelId;
     const duelKey: string = `duel:${duelId}`;
 
+    // Update duel with second user and start blockchain integration
+    await Duels.findByIdAndUpdate(duelId, {
+      user2: user._id,
+      status: 'waiting_for_stakes',
+      stakingDeadline: new Date(Date.now() + 60000), // 1 minute from now
+      stakeAmount: process.env.DEFAULT_STAKE_AMOUNT || '1000000000000000000' // 1 ETH default
+    });
+
     duelObj.user2 = user._id as string;
 
     await redis.del(`challenge:${duelObj.challengeId}`);
-    await redis.sAdd(duelKey, duelObj);
+    await redis.sAdd(duelKey, JSON.stringify(duelObj));
 
-    io.to(duelKey).emit('confirm-match', 'Confirm your match on metamask');
-    // *************************************************************************
-    // *************************************************************************
-    // ***BLOCKCHAIN***
-    // *************************************************************************
-    // *************************************************************************
+    // Join both users to the duel room
+    io.sockets.sockets.get(socketId)?.join(duelKey);
+
+    // Emit match found event to start staking phase
+    io.to(duelKey).emit('match_found_start_staking', {
+      message: 'Match found! Both users have 1 minute to stake their tokens.',
+      duel: {
+        id: duelId,
+        user1: duelObj.user1,
+        user2: user._id,
+        challenge: duelObj.challengeId,
+        status: 'waiting_for_stakes',
+        stakingDeadline: Date.now() + 60000, // 1 minute
+        stakeAmount: process.env.DEFAULT_STAKE_AMOUNT || '1000000000000000000',
+        blockchainDuelId: parseInt(duelId.slice(-8), 16) // Use last 8 chars of MongoDB ID as blockchain ID
+      },
+      stakingWindow: 60000 // 1 minute in milliseconds
+    });
+
+    // Set up staking timeout
+    const timeoutKey = `duel:${duelId}:staking_timeout`;
+    await redis.setEx(timeoutKey, 60, 'timeout'); // 60 seconds
+
+    // Set timeout for handling incomplete stakes
+    setTimeout(async () => {
+      try {
+        const timeoutExists = await redis.exists(timeoutKey);
+        if (timeoutExists) {
+          // Staking window expired - handle timeout
+          const expiredDuel = await Duels.findById(duelId)
+            .populate('user1', 'walletAddress')
+            .populate('user2', 'walletAddress');
+
+          if (expiredDuel && expiredDuel.status === 'waiting_for_stakes') {
+            const user1Staked = expiredDuel.user1StakeStatus === 'staked';
+            const user2Staked = expiredDuel.user2StakeStatus === 'staked';
+
+            if (!user1Staked && !user2Staked) {
+              // Neither user staked - cancel duel
+              await Duels.findByIdAndUpdate(duelId, {
+                status: 'staking_timeout'
+              });
+
+              io.to(duelKey).emit('duel_cancelled', {
+                message: 'Duel cancelled - neither user staked within the time limit.',
+                reason: 'staking_timeout'
+              });
+
+            } else if (user1Staked && !user2Staked) {
+              // Only user1 staked - refund user1
+              await handlePartialStakeRefund(expiredDuel, 'user1', duelKey, io);
+
+            } else if (!user1Staked && user2Staked) {
+              // Only user2 staked - refund user2
+              await handlePartialStakeRefund(expiredDuel, 'user2', duelKey, io);
+            }
+            // If both staked, this timeout is irrelevant as duel is already active
+
+            await redis.del(timeoutKey);
+          }
+        }
+      } catch (error) {
+        console.error('Error handling staking timeout:', error);
+      }
+    }, 60000); // 1 minute
+
+    const response: APIResponse = {
+      message: 'Match found! Staking phase initiated.',
+      details: {
+        title: 'Match Found',
+        description: 'You have been matched with an opponent. Both users must stake within 1 minute.',
+      },
+      success: true,
+      status: 'success',
+      statusCode: 200,
+      data: {
+        duelId,
+        opponent: duelObj.user1,
+        stakingDeadline: Date.now() + 60000,
+        stakeAmount: process.env.DEFAULT_STAKE_AMOUNT || '1000000000000000000'
+      }
+    };
+
+    return sendResponse(res, response);
   }
 };
+
+// Helper function to handle partial stake refunds
+async function handlePartialStakeRefund(duel: IDuels, stakedUser: 'user1' | 'user2', duelKey: string, io: any) {
+  try {
+    // In production, this should be done through a secure backend service
+    // For now, we'll just update the database status
+    
+    await Duels.findByIdAndUpdate(duel._id, {
+      status: 'staking_timeout',
+      [`${stakedUser}StakeStatus`]: 'refunded'
+    });
+
+    io.to(duelKey).emit('duel_cancelled', {
+      message: `Duel cancelled - only one user staked. Refund will be processed.`,
+      reason: 'partial_stake_timeout',
+      refundUser: stakedUser
+    });
+
+    console.log(`Refund needed for ${stakedUser} in duel ${duel._id}`);
+    
+  } catch (error) {
+    console.error('Error processing refund:', error);
+  }
+}
 
 export default searchOpponent;
 

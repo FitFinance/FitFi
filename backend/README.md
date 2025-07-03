@@ -48,6 +48,137 @@ Below is a list of the global dependencies installed by the `preinstall` script,
 
 ---
 
+## Environment Setup
+
+### 1. Clone the Repository
+```bash
+git clone <repository-url>
+cd fitfi/backend
+```
+
+### 2. Install Dependencies
+```bash
+npm run preinstall  # Install global dependencies
+npm install         # Install project dependencies
+```
+
+### 3. Environment Configuration
+Copy the example environment file and configure it:
+```bash
+cp .env.example .env
+```
+
+Edit the `.env` file with your actual configuration values:
+
+#### Required Environment Variables:
+- `MONGO_URI`: MongoDB connection string
+- `JWT_SECRET`: Secret key for JWT tokens
+- `REDIS_URL`: Redis connection string
+- `BLOCKCHAIN_RPC_URL`: Core Testnet RPC URL
+- `DUEL_STAKING_CONTRACT_ADDRESS`: Deployed contract address
+- `PLATFORM_ADDRESS`: Platform wallet address
+- `PLATFORM_PRIVATE_KEY`: Platform wallet private key (keep secure!)
+
+### 4. Database Setup
+Start MongoDB and Redis using Docker:
+```bash
+docker-compose up -d
+```
+
+### 5. Start the Development Server
+```bash
+npm run dev
+```
+
+## Blockchain Integration
+
+FitFi integrates with the Core Testnet 2 blockchain for decentralized fitness dueling:
+
+### Features:
+- **Smart Contract Staking**: Users stake tCORE2 tokens for duels
+- **Automated Settlements**: Winners receive 85% of the total stake
+- **Platform Fees**: 10% platform fee, 5% goes to a community pool
+- **Real-time Updates**: WebSocket events for blockchain transactions
+
+### Contract Details:
+- **Network**: Core Testnet 2 (Chain ID: 1114)
+- **Contract Address**: `0x8796071429e599a1ec631258dF4aEceA18cB9F69`
+- **RPC URL**: `https://rpc.test2.btcs.network`
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/login` - User login with wallet signature
+- `POST /api/auth/register` - User registration
+
+### Duels
+- `POST /api/duels/search-opponent` - Find and create blockchain duel
+- `POST /api/duels/stake-duel` - Record blockchain stake transaction
+- `PUT /api/duels/:id` - Update duel status and trigger settlement
+
+### WebSocket Events
+- `match_found_start_staking` - Opponent found, start staking
+- `user_staked` - User completed blockchain stake
+- `duel_active` - Both users staked, duel active
+- `duel_settled` - Duel completed and settled
+
+## Development Scripts
+
+### Available Scripts:
+- `npm run dev` - Start development server with hot reload
+- `npm run build` - Build TypeScript to JavaScript
+- `npm run start` - Start production server
+- `npm run lint` - Run ESLint
+- `npm run docs` - Start documentation server
+
+### Utility Scripts:
+- `scripts/create-admin-account.ts` - Create admin user account
+- `scripts/dummy-wallet.ts` - Test wallet utilities
+
+## Security Notes
+
+⚠️ **Important Security Considerations:**
+
+1. Never commit `.env` files to version control
+2. Keep private keys secure and never hardcode them
+3. Use environment variables for all sensitive configuration
+4. Regularly rotate JWT secrets and API keys
+5. Monitor blockchain transactions for suspicious activity
+
+## Database Schema
+
+### Users Collection:
+```typescript
+interface IUser {
+  walletAddress: string;
+  username: string;
+  email?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
+### Duels Collection:
+```typescript
+interface IDuels {
+  user1: ObjectId;
+  user2: ObjectId;
+  status: 'pending' | 'active' | 'completed';
+  blockchainDuelId?: number;
+  stakeAmount: string;
+  user1StakeStatus: 'pending' | 'staked' | 'failed';
+  user2StakeStatus: 'pending' | 'staked' | 'failed';
+  stakingDeadline: Date;
+  user1TxHash?: string;
+  user2TxHash?: string;
+  settlementTxHash?: string;
+  isBlockchainActive: boolean;
+  winner?: ObjectId;
+  createdAt: Date;
+  updatedAt: Date;
+}
+```
+
 ## Additional Information
 
 ### Why Use Global Dependencies?
