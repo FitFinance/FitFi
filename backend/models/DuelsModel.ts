@@ -45,6 +45,45 @@ const duelsSchema: Schema<IDuels> = new mongoose.Schema(
       type: Number,
       default: 0, // Default score for user2
     },
+    // Blockchain integration fields
+    blockchainDuelId: {
+      type: Number,
+      required: false, // Will be set when duel is created on blockchain
+    },
+    stakeAmount: {
+      type: String, // Store as string to handle big numbers precisely
+      required: false, // Will be set when users stake
+    },
+    user1StakeStatus: {
+      type: String,
+      enum: ['pending', 'staked', 'refunded'],
+      default: 'pending',
+    },
+    user2StakeStatus: {
+      type: String,
+      enum: ['pending', 'staked', 'refunded'], 
+      default: 'pending',
+    },
+    stakingDeadline: {
+      type: Date,
+      required: false, // 1-minute deadline for both users to stake
+    },
+    user1TxHash: {
+      type: String,
+      required: false, // Transaction hash for user1's stake
+    },
+    user2TxHash: {
+      type: String,
+      required: false, // Transaction hash for user2's stake
+    },
+    settlementTxHash: {
+      type: String,
+      required: false, // Transaction hash for duel settlement
+    },
+    isBlockchainActive: {
+      type: Boolean,
+      default: false, // True when both users have staked and duel is active on blockchain
+    },
   },
   {
     timestamps: true,
