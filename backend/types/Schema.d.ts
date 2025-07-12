@@ -25,7 +25,14 @@ declare global {
     user1: IUser['_id'];
     user2: IUser['_id'] | null; // user2 can be null if the duel is not yet accepted
     challenge: IChallenge['_id'];
-    status: 'searching' | 'accepted' | 'cancelled' | 'completed' | 'confirming' | 'waiting_for_stakes' | 'staking_timeout'; // confirming is used when a duel is matched and waiting for confirmation
+    status:
+      | 'searching'
+      | 'accepted'
+      | 'cancelled'
+      | 'completed'
+      | 'confirming'
+      | 'waiting_for_stakes'
+      | 'staking_timeout'; // confirming is used when a duel is matched and waiting for confirmation
     winner: IUser['_id'] | null;
     user1Score: number;
     user2Score: number;
@@ -47,5 +54,10 @@ declare global {
 
   interface CustomRequest extends Request {
     user: IUser;
+  }
+
+  interface ErrorConstructor {
+    /** @deprecated Use `AppError` instead */
+    new (message?: string): never;
   }
 }
