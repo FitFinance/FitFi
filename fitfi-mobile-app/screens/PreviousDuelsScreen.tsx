@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme, useThemeStyles } from '../contexts/ThemeContext';
 
 const duels = [
   {
@@ -55,6 +56,10 @@ const duels = [
 export default function PreviousDuelsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { theme, isDark } = useTheme();
+
+  // Theme-aware styles
+  const styles = useThemeStyles(lightStyles, darkStyles);
 
   const renderDuelCard = ({ item }) => {
     const isWinner = item.winner === 'You';
@@ -180,7 +185,7 @@ export default function PreviousDuelsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const lightStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -351,5 +356,181 @@ const styles = StyleSheet.create({
   durationText: {
     fontSize: 12,
     color: '#9ca3af',
+  },
+});
+
+// Dark theme styles
+const darkStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 16,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  headerStat: {
+    backgroundColor: '#1e293b',
+    borderRadius: 12,
+    padding: 16,
+    flex: 1,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  headerStatValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 4,
+  },
+  headerStatLabel: {
+    fontSize: 12,
+    color: '#cbd5e1',
+  },
+  positive: {
+    color: '#10b981',
+  },
+  negative: {
+    color: '#ef4444',
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  duelCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  winCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#10b981',
+  },
+  lossCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#ef4444',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  opponentInfo: {
+    flex: 1,
+  },
+  opponentName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 8,
+  },
+  resultBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  winBadge: {
+    backgroundColor: '#065f46',
+  },
+  lossBadge: {
+    backgroundColor: '#7f1d1d',
+  },
+  resultText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#f1f5f9',
+  },
+  rewardContainer: {
+    alignItems: 'flex-end',
+  },
+  reward: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  positiveReward: {
+    color: '#10b981',
+  },
+  negativeReward: {
+    color: '#ef4444',
+  },
+  statsContainer: {
+    marginBottom: 16,
+  },
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statColumn: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#e2e8f0',
+  },
+  winnerValue: {
+    color: '#10b981',
+  },
+  vsContainer: {
+    paddingHorizontal: 16,
+  },
+  vsText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#94a3b8',
+  },
+  difference: {
+    alignItems: 'center',
+  },
+  differenceText: {
+    fontSize: 14,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#334155',
+  },
+  dateText: {
+    fontSize: 12,
+    color: '#94a3b8',
+  },
+  durationText: {
+    fontSize: 12,
+    color: '#94a3b8',
   },
 });

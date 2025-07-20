@@ -8,10 +8,15 @@ import {
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTheme, useThemeStyles } from '../contexts/ThemeContext';
 
 export default function DuelDetailsScreen() {
-  const { duelId, previous } = useLocalSearchParams();
+  const { /* duelId, */ previous } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+  const { theme, isDark } = useTheme();
+
+  // Theme-aware styles
+  const styles = useThemeStyles(lightStyles, darkStyles);
 
   // Enhanced dummy data for demonstration
   const duelData = {
@@ -205,7 +210,7 @@ export default function DuelDetailsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const lightStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -419,6 +424,256 @@ const styles = StyleSheet.create({
   resultDetail: {
     fontSize: 16,
     color: '#64748b',
+    textAlign: 'center',
+    lineHeight: 24,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 20,
+    gap: 12,
+    marginBottom: 20,
+  },
+  shareButton: {
+    flex: 1,
+    backgroundColor: '#667eea',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  shareButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  motivateButton: {
+    flex: 1,
+    backgroundColor: '#10b981',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  motivateButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});
+
+// Dark theme styles
+const darkStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    flex: 1,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  liveBadge: {
+    backgroundColor: '#78350f',
+  },
+  completedBadge: {
+    backgroundColor: '#065f46',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#f1f5f9',
+  },
+  duelInfo: {
+    backgroundColor: '#1e293b',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  infoLabel: {
+    fontSize: 16,
+    color: '#cbd5e1',
+  },
+  infoValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#f1f5f9',
+  },
+  timeLeft: {
+    color: '#f59e0b',
+  },
+  statusCard: {
+    backgroundColor: '#1e293b',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  statusTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 8,
+  },
+  statusDetail: {
+    fontSize: 16,
+    color: '#cbd5e1',
+    textAlign: 'center',
+  },
+  playersContainer: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
+  playerCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+  },
+  winnerCard: {
+    borderWidth: 3,
+    borderColor: '#10b981',
+  },
+  playerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  playerAvatar: {
+    fontSize: 32,
+    marginRight: 12,
+  },
+  playerInfo: {
+    flex: 1,
+  },
+  playerName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+  },
+  winnerText: {
+    color: '#10b981',
+  },
+  winnerBadge: {
+    fontSize: 14,
+    color: '#10b981',
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  mainStat: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  stepCount: {
+    fontSize: 36,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+  },
+  winnerSteps: {
+    color: '#10b981',
+  },
+  stepLabel: {
+    fontSize: 16,
+    color: '#cbd5e1',
+    marginBottom: 12,
+  },
+  progressContainer: {
+    width: '100%',
+    alignItems: 'center',
+  },
+  progressTrack: {
+    width: '100%',
+    height: 8,
+    backgroundColor: '#374151',
+    borderRadius: 4,
+    marginBottom: 8,
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#667eea',
+    borderRadius: 4,
+  },
+  winnerProgress: {
+    backgroundColor: '#10b981',
+  },
+  progressText: {
+    fontSize: 14,
+    color: '#cbd5e1',
+  },
+  additionalStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    marginTop: 2,
+  },
+  resultCard: {
+    backgroundColor: '#1e293b',
+    marginHorizontal: 20,
+    borderRadius: 16,
+    padding: 24,
+    marginBottom: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+  },
+  resultTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 12,
+    textAlign: 'center',
+  },
+  resultDetail: {
+    fontSize: 16,
+    color: '#cbd5e1',
     textAlign: 'center',
     lineHeight: 24,
   },

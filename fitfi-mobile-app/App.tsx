@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import SplashScreen from './screens/SplashScreen';
 import ConnectWalletScreen from './screens/ConnectWalletScreen';
-import AppNavigator from './navigation/AppNavigator';
 import DuelDetailsScreen from './screens/DuelDetailsScreen';
 import UserSettingsScreen from './screens/UserSettingsScreen';
 import { createStackNavigator } from '@react-navigation/stack';

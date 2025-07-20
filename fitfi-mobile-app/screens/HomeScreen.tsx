@@ -8,10 +8,12 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeStyles } from '../contexts/ThemeContext';
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useThemeStyles(lightStyles, darkStyles);
 
   return (
     <ScrollView
@@ -92,7 +94,8 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+// Light theme styles
+const lightStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -289,5 +292,212 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#667eea',
+  },
+});
+
+// Dark theme styles
+const darkStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 10,
+  },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  greeting: {
+    fontSize: 16,
+    color: '#cbd5e1',
+    fontWeight: '500',
+  },
+  username: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginTop: 2,
+  },
+  settingsIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#1e293b',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  settingsEmoji: {
+    fontSize: 20,
+  },
+  statsContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  statCard: {
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 16,
+  },
+  primaryCard: {
+    backgroundColor: '#4f46e5',
+  },
+  statNumber: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  statLabel: {
+    fontSize: 16,
+    color: '#e2e8f0',
+    marginBottom: 16,
+  },
+  statProgress: {
+    height: 6,
+    backgroundColor: 'rgba(255,255,255,0.3)',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#ffffff',
+    borderRadius: 3,
+  },
+  miniStatsRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  miniStatCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 20,
+  },
+  calorieCard: {
+    backgroundColor: '#dc2626',
+  },
+  timeCard: {
+    backgroundColor: '#059669',
+  },
+  miniStatNumber: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 4,
+  },
+  miniStatLabel: {
+    fontSize: 14,
+    color: '#ffffff',
+    opacity: 0.9,
+  },
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 16,
+  },
+  challengeCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  challengeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  challengeTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#f1f5f9',
+  },
+  challengeReward: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#10b981',
+  },
+  challengeProgress: {
+    fontSize: 14,
+    color: '#cbd5e1',
+    marginBottom: 12,
+  },
+  progressContainer: {
+    height: 8,
+    backgroundColor: '#475569',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  challengeProgressBar: {
+    height: '100%',
+    backgroundColor: '#10b981',
+    borderRadius: 4,
+  },
+  duelCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 16,
+    padding: 20,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  duelInfo: {
+    flex: 1,
+  },
+  duelOpponent: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#f1f5f9',
+    marginBottom: 4,
+  },
+  duelResult: {
+    fontSize: 14,
+    color: '#10b981',
+    fontWeight: '500',
+  },
+  duelStats: {
+    alignItems: 'flex-end',
+  },
+  duelStatText: {
+    fontSize: 14,
+    color: '#cbd5e1',
+  },
+  viewAllButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  viewAllText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6366f1',
   },
 });

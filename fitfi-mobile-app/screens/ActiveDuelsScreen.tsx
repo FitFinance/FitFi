@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useThemeStyles } from '../contexts/ThemeContext';
 
 const duels = [
   {
@@ -42,6 +43,7 @@ const duels = [
 export default function ActiveDuelsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const styles = useThemeStyles(lightStyles, darkStyles);
 
   const renderDuelCard = ({ item }) => {
     const isLive = item.status === 'Live';
@@ -63,7 +65,9 @@ export default function ActiveDuelsScreen() {
             <View
               style={[
                 styles.statusBadge,
-                styles[`${item.status.toLowerCase()}Status`],
+                item.status === 'Live'
+                  ? styles.liveStatus
+                  : styles.waitingStatus,
               ]}
             >
               <Text style={styles.statusText}>{item.status}</Text>
@@ -152,7 +156,8 @@ export default function ActiveDuelsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+// Light theme styles
+const lightStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
@@ -302,6 +307,170 @@ const styles = StyleSheet.create({
   },
   viewButton: {
     backgroundColor: '#667eea',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  viewButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+});
+
+// Dark theme styles
+const darkStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0f172a',
+  },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 16,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#cbd5e1',
+  },
+  listContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  duelCard: {
+    backgroundColor: '#1e293b',
+    borderRadius: 20,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 12,
+    borderWidth: 1,
+    borderColor: '#334155',
+  },
+  winningCard: {
+    borderWidth: 2,
+    borderColor: '#10b981',
+  },
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  opponentInfo: {
+    flex: 1,
+  },
+  opponentName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+    marginBottom: 8,
+  },
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+  },
+  liveStatus: {
+    backgroundColor: '#451a03',
+  },
+  waitingStatus: {
+    backgroundColor: '#1e1b4b',
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#fbbf24',
+  },
+  stake: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#10b981',
+  },
+  liveStats: {
+    marginBottom: 16,
+  },
+  statRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#cbd5e1',
+    marginBottom: 4,
+  },
+  statValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#f1f5f9',
+  },
+  winningValue: {
+    color: '#10b981',
+  },
+  vsContainer: {
+    paddingHorizontal: 16,
+  },
+  vsText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#94a3b8',
+  },
+  progressContainer: {
+    alignItems: 'center',
+  },
+  progressTrack: {
+    width: '100%',
+    height: 6,
+    backgroundColor: '#475569',
+    borderRadius: 3,
+    marginBottom: 8,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#10b981',
+    borderRadius: 3,
+  },
+  leadText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#cbd5e1',
+  },
+  waitingInfo: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  waitingText: {
+    fontSize: 16,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+  },
+  cardFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  timeLeft: {
+    fontSize: 14,
+    color: '#fbbf24',
+    fontWeight: '600',
+  },
+  viewButton: {
+    backgroundColor: '#6366f1',
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
