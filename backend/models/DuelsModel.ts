@@ -20,7 +20,17 @@ const duelsSchema: Schema<IDuels> = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['searching', 'accepted', 'cancelled', 'completed', 'confirming'],
+      enum: [
+        'searching',
+        'accepted',
+        'cancelled',
+        'completed',
+        'confirming',
+        'waiting_for_stakes',
+        'staking_timeout',
+        'active',
+        'monitoring_health',
+      ],
       default: 'searching',
       required: true,
     },
@@ -61,7 +71,7 @@ const duelsSchema: Schema<IDuels> = new mongoose.Schema(
     },
     user2StakeStatus: {
       type: String,
-      enum: ['pending', 'staked', 'refunded'], 
+      enum: ['pending', 'staked', 'refunded'],
       default: 'pending',
     },
     stakingDeadline: {
@@ -83,6 +93,35 @@ const duelsSchema: Schema<IDuels> = new mongoose.Schema(
     isBlockchainActive: {
       type: Boolean,
       default: false, // True when both users have staked and duel is active on blockchain
+    },
+    // Health monitoring fields
+    duelDuration: {
+      type: Number, // Duration in minutes
+      default: 60,
+    },
+    healthDataCollectionStarted: {
+      type: Boolean,
+      default: false,
+    },
+    lastHealthDataUpdate: {
+      type: Date,
+      default: null,
+    },
+    user1HealthDataCount: {
+      type: Number,
+      default: 0,
+    },
+    user2HealthDataCount: {
+      type: Number,
+      default: 0,
+    },
+    duelStartTime: {
+      type: Date,
+      default: null,
+    },
+    duelEndTime: {
+      type: Date,
+      default: null,
     },
   },
   {

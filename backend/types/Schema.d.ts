@@ -32,7 +32,9 @@ declare global {
       | 'completed'
       | 'confirming'
       | 'waiting_for_stakes'
-      | 'staking_timeout'; // confirming is used when a duel is matched and waiting for confirmation
+      | 'staking_timeout'
+      | 'active'
+      | 'monitoring_health'; // confirming is used when a duel is matched and waiting for confirmation
     winner: IUser['_id'] | null;
     user1Score: number;
     user2Score: number;
@@ -50,6 +52,24 @@ declare global {
     isBlockchainActive: boolean;
     duelStartTime?: Date;
     duelEndTime?: Date;
+    // Health monitoring fields
+    duelDuration?: number; // Duration in minutes
+    healthDataCollectionStarted?: boolean;
+    lastHealthDataUpdate?: Date;
+    user1HealthDataCount?: number;
+    user2HealthDataCount?: number;
+  }
+
+  interface IHealthData extends Document {
+    user: IUser['_id'];
+    duel: IDuels['_id'];
+    dataType: 'steps' | 'calories' | 'distance' | 'active_time';
+    value: number;
+    timestamp: Date;
+    source: 'health_connect' | 'manual' | 'apple_health';
+    isValidated: boolean;
+    validationTimestamp: Date | null;
+    createdAt: Date;
   }
 
   interface CustomRequest extends Request {

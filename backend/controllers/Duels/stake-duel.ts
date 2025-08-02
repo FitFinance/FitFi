@@ -38,8 +38,10 @@ const stakeDuel: fn = catchAsync(
     }
 
     // Check if user is part of this duel
-    const isUser1 = (user._id as any).toString() === (duel.user1 as any)._id.toString();
-    const isUser2 = (user._id as any).toString() === (duel.user2 as any)?._id?.toString();
+    const isUser1 =
+      (user._id as any).toString() === (duel.user1 as any)._id.toString();
+    const isUser2 =
+      (user._id as any).toString() === (duel.user2 as any)?._id?.toString();
 
     if (!isUser1 && !isUser2) {
       const errorMessage: IErrorMessage = {
@@ -50,7 +52,9 @@ const stakeDuel: fn = catchAsync(
     }
 
     // Check if user has already staked
-    const currentStakeStatus = isUser1 ? duel.user1StakeStatus : duel.user2StakeStatus;
+    const currentStakeStatus = isUser1
+      ? duel.user1StakeStatus
+      : duel.user2StakeStatus;
     if (currentStakeStatus === 'staked') {
       const errorMessage: IErrorMessage = {
         title: 'Already Staked',
@@ -79,7 +83,10 @@ const stakeDuel: fn = catchAsync(
 
     try {
       // Get blockchain duel ID (use MongoDB _id converted to number for Direct Commit pattern)
-      const blockchainDuelId = parseInt((duel._id as any).toString().slice(-8), 16); // Use last 8 chars of MongoDB ID as number
+      const blockchainDuelId = parseInt(
+        (duel._id as any).toString().slice(-8),
+        16
+      ); // Use last 8 chars of MongoDB ID as number
 
       // Execute staking transaction on blockchain
       const txHash = await duelStakingService.stakeForDuel(
@@ -109,20 +116,22 @@ const stakeDuel: fn = catchAsync(
         .populate('user1', 'walletAddress username')
         .populate('user2', 'walletAddress username');
 
-      const bothStaked = updatedDuel!.user1StakeStatus === 'staked' && 
-                        updatedDuel!.user2StakeStatus === 'staked';
+      const bothStaked =
+        updatedDuel!.user1StakeStatus === 'staked' &&
+        updatedDuel!.user2StakeStatus === 'staked';
 
       if (bothStaked) {
-        // Both users have staked - activate the duel
+        // Both users have staked - activate the duel and prepare for health monitoring
         await Duels.findByIdAndUpdate(duelId, {
           status: 'accepted',
-          isBlockchainActive: true
+          isBlockchainActive: true,
         });
 
-        // Emit to both users that the duel is now active
+        // Emit to both users that the duel is now active and they can start health monitoring
         const duelRoom = `duel:${duelId}`;
         io.to(duelRoom).emit('duel_active', {
-          message: 'Both users have staked! The duel is now active.',
+          message:
+            'Both users have staked! The duel is now active. You can now start the fitness challenge.',
           duel: {
             id: updatedDuel!._id,
             status: 'accepted',
@@ -130,23 +139,32 @@ const stakeDuel: fn = catchAsync(
             user1StakeStatus: updatedDuel!.user1StakeStatus,
             user2StakeStatus: updatedDuel!.user2StakeStatus,
             stakeAmount: updatedDuel!.stakeAmount,
-            blockchainDuelId: updatedDuel!.blockchainDuelId
-          }
+            blockchainDuelId: updatedDuel!.blockchainDuelId,
+          },
+          nextStep: {
+            action: 'start_health_monitoring',
+            description:
+              'Ready to begin fitness tracking. Tap to start the challenge!',
+            readyToStart: true,
+          },
         });
 
         // Clear the staking timeout if it exists
         const timeoutKey = `duel:${duelId}:staking_timeout`;
         await redis.del(timeoutKey);
-
       } else {
         // Only one user has staked - notify the room
         const duelRoom = `duel:${duelId}`;
-        
+
         io.to(duelRoom).emit('user_staked', {
-          message: `${isUser1 ? 'User 1' : 'User 2'} has staked. Waiting for the other user to stake.`,
+          message: `${
+            isUser1 ? 'User 1' : 'User 2'
+          } has staked. Waiting for the other user to stake.`,
           stakedUser: isUser1 ? 'user1' : 'user2',
           txHash: txHash,
-          timeRemaining: duel.stakingDeadline ? Math.max(0, duel.stakingDeadline.getTime() - Date.now()) : null
+          timeRemaining: duel.stakingDeadline
+            ? Math.max(0, duel.stakingDeadline.getTime() - Date.now())
+            : null,
         });
       }
 
@@ -164,15 +182,14 @@ const stakeDuel: fn = catchAsync(
           blockchainDuelId,
           stakeAmount,
           bothStaked,
-          duelStatus: bothStaked ? 'accepted' : 'waiting_for_stakes'
-        }
+          duelStatus: bothStaked ? 'accepted' : 'waiting_for_stakes',
+        },
       };
 
       return sendResponse(res, response);
-
     } catch (error) {
       console.error('Blockchain staking error:', error);
-      
+
       // Update stake status to reflect failure
       const failureUpdate: any = {};
       if (isUser1) {
@@ -184,7 +201,10 @@ const stakeDuel: fn = catchAsync(
 
       const errorMessage: IErrorMessage = {
         title: 'Staking Failed',
-        description: error instanceof Error ? error.message : 'Failed to stake on blockchain',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Failed to stake on blockchain',
         context: 'The transaction could not be completed. Please try again.',
       };
       throw new AppError('Internal Server Error', errorMessage, 500);
