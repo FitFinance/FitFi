@@ -52,12 +52,19 @@ export default function ActiveDuelsScreen() {
     return (
       <TouchableOpacity
         style={[styles.duelCard, isLive && isWinning && styles.winningCard]}
-        onPress={() =>
-          router.push({
-            pathname: '/duel-details',
-            params: { duelId: item.id },
-          })
-        }
+        onPress={() => {
+          if (item.status === 'Live' || item.status === 'Ready to Start') {
+            router.push({
+              pathname: '/duel-health-monitor',
+              params: { duelId: item.id },
+            });
+          } else {
+            router.push({
+              pathname: '/duel-details',
+              params: { duelId: item.id },
+            });
+          }
+        }}
       >
         <View style={styles.cardHeader}>
           <View style={styles.opponentInfo}>
