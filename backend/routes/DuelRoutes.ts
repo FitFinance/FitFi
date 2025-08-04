@@ -4,6 +4,8 @@ import authenticate from '../middleware/authenticate.js';
 import authorize from '../middleware/authorize.js';
 import searchOpponent from '../controllers/Duels/search-opponent.js';
 import activeDuels from '../controllers/Duels/active-duels.js';
+import getActiveDuels from '../controllers/Duels/get-active-duels.js';
+import stakeDuel from '../controllers/Duels/stake-duel.js';
 import validateRequiredEnvVariables from '../middleware/validate-required-env-variables.js';
 import updateDuel from '../controllers/Duels/update-duel.js';
 
@@ -17,6 +19,13 @@ DuelRoutes.post(
   searchOpponent
 );
 DuelRoutes.post(
+  '/stake-duel',
+  validateRequiredEnvVariables('JWT_SECRET'),
+  authenticate,
+  authorize('user'),
+  stakeDuel
+);
+DuelRoutes.post(
   '/update-duel',
   validateRequiredEnvVariables('JWT_SECRET'),
   authenticate,
@@ -24,4 +33,5 @@ DuelRoutes.post(
   updateDuel
 );
 DuelRoutes.get('/active-duels', authenticate, authorize('user'), activeDuels);
+DuelRoutes.get('/active', authenticate, authorize('user'), getActiveDuels);
 export default DuelRoutes;
