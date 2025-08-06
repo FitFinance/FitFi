@@ -1,19 +1,49 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeStyles } from '../contexts/ThemeContext';
+import { ENV } from '../utils/config';
+import { apiService } from '../utils/ApiService';
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const styles = useThemeStyles(lightStyles, darkStyles);
+  const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState(null);
+
+  useEffect(() => {
+    // Test API connection when component mounts
+    testApiConnection();
+  }, []);
+
+  const testApiConnection = async () => {
+    setLoading(true);
+    try {
+      const isConnected = await apiService.testConnection();
+      console.log('API Connection:', isConnected ? 'Connected' : 'Failed');
+
+      // If connected, try to get user profile (this will fail without auth token)
+      if (isConnected) {
+        const profile = await apiService.getProfile();
+        if (profile.success) {
+          setUserData(profile.data);
+        }
+      }
+    } catch (error) {
+      console.error('API test failed:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <ScrollView
@@ -26,7 +56,16 @@ export default function HomeScreen() {
         <View style={styles.headerTop}>
           <View>
             <Text style={styles.greeting}>Good Morning!</Text>
-            <Text style={styles.username}>John Doe</Text>
+            <Text style={styles.username}>
+              {userData?.username || 'Guest User'}
+            </Text>
+            {loading && (
+              <ActivityIndicator
+                size='small'
+                color='#667eea'
+                style={{ marginTop: 4 }}
+              />
+            )}
           </View>
           <TouchableOpacity
             style={styles.settingsIcon}
@@ -37,11 +76,11 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Using placeholder data since we don't have health data API yet */}
       <View style={styles.statsContainer}>
         <View style={[styles.statCard, styles.primaryCard]}>
           <Text style={styles.statNumber}>10,247</Text>
-          <Text style={styles.statLabel}>Steps Today</Text>
+          <Text style={styles.statLabel}>Steps Today (Mock)</Text>
           <View style={styles.statProgress}>
             <View style={[styles.progressBar, { width: '75%' }]} />
           </View>
@@ -50,18 +89,18 @@ export default function HomeScreen() {
         <View style={styles.miniStatsRow}>
           <View style={[styles.miniStatCard, styles.calorieCard]}>
             <Text style={styles.miniStatNumber}>547</Text>
-            <Text style={styles.miniStatLabel}>Calories</Text>
+            <Text style={styles.miniStatLabel}>Calories (Mock)</Text>
           </View>
           <View style={[styles.miniStatCard, styles.timeCard]}>
             <Text style={styles.miniStatNumber}>1h 23m</Text>
-            <Text style={styles.miniStatLabel}>Active Time</Text>
+            <Text style={styles.miniStatLabel}>Active Time (Mock)</Text>
           </View>
         </View>
       </View>
 
-      {/* Active Challenges Section */}
+      {/* Active Challenges Section - Placeholder data */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🏆 Active Challenges</Text>
+        <Text style={styles.sectionTitle}>🏆 Active Challenges (Mock)</Text>
         <View style={styles.challengeCard}>
           <View style={styles.challengeHeader}>
             <Text style={styles.challengeTitle}>Weekly Step Challenge</Text>
@@ -74,9 +113,31 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Recent Duels Section */}
+      {/* Development Debug Panel - Only shown in development */}
+      {ENV.SHOW_DEV_COMPONENTS && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🔧 Development Debug</Text>
+          <View style={styles.debugCard}>
+            <Text style={styles.debugTitle}>Environment: {ENV.NODE_ENV}</Text>
+            <Text style={styles.debugText}>API URL: {ENV.API_URL}</Text>
+            <Text style={styles.debugText}>WebSocket: {ENV.WS_URL}</Text>
+            <Text style={styles.debugText}>
+              Health Connect:{' '}
+              {ENV.HEALTH_CONNECT_ENABLED ? 'Enabled' : 'Disabled'}
+            </Text>
+            <TouchableOpacity
+              style={styles.debugButton}
+              onPress={() => console.log('Debug info logged')}
+            >
+              <Text style={styles.debugButtonText}>Log Debug Info</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
+
+      {/* Recent Duels Section - Placeholder data */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚔️ Recent Duels</Text>
+        <Text style={styles.sectionTitle}>⚔️ Recent Duels (Mock)</Text>
         <View style={styles.duelCard}>
           <View style={styles.duelInfo}>
             <Text style={styles.duelOpponent}>vs. Sarah Johnson</Text>
@@ -293,6 +354,37 @@ const lightStyles = StyleSheet.create({
     fontWeight: '600',
     color: '#667eea',
   },
+  debugCard: {
+    backgroundColor: '#fff3cd',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#ffeaa7',
+  },
+  debugTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  debugText: {
+    fontSize: 14,
+    color: '#856404',
+    marginBottom: 4,
+  },
+  debugButton: {
+    backgroundColor: '#fd79a8',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  debugButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
+  },
 });
 
 // Dark theme styles
@@ -499,5 +591,36 @@ const darkStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#6366f1',
+  },
+  debugCard: {
+    backgroundColor: '#374151',
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: '#4b5563',
+  },
+  debugTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fbbf24',
+    marginBottom: 8,
+  },
+  debugText: {
+    fontSize: 14,
+    color: '#d1d5db',
+    marginBottom: 4,
+  },
+  debugButton: {
+    backgroundColor: '#8b5cf6',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  debugButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+    fontSize: 14,
   },
 });

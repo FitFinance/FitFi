@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ENV, debugLog } from './config';
 
-const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3000/api/v1';
+const API_BASE_URL = ENV.API_URL;
 
 export interface DuelData {
   id: string;
@@ -75,6 +75,7 @@ class FitFiApiService {
    */
   async submitHealthData(data: HealthDataSubmission): Promise<any> {
     try {
+      debugLog('Submitting health data:', data);
       const response = await fetch(`${API_BASE_URL}/health-data/submit`, {
         method: 'POST',
         headers: this.getAuthHeaders(),
@@ -87,7 +88,7 @@ class FitFiApiService {
         throw new Error(result.message || 'Failed to submit health data');
       }
 
-      console.log('✅ Health data submitted successfully:', result);
+      debugLog('✅ Health data submitted successfully:', result);
       return result;
     } catch (error) {
       console.error('❌ Failed to submit health data:', error);

@@ -1,58 +1,195 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, useThemeStyles } from '../contexts/ThemeContext';
+import { apiService, Duel } from '../utils/ApiService';
 
 export default function DuelDetailsScreen() {
-  const { /* duelId, */ previous } = useLocalSearchParams();
+  const { duelId, previous } = useLocalSearchParams();
   const insets = useSafeAreaInsets();
   const { theme, isDark } = useTheme();
+  const [duel, setDuel] = useState<Duel | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Theme-aware styles
   const styles = useThemeStyles(lightStyles, darkStyles);
 
-  // Enhanced dummy data for demonstration
+  useEffect(() => {
+    const loadDuelData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await apiService.getDuel(duelId as string);
+
+        if (response.success && response.data) {
+          setDuel(response.data);
+        } else {
+          setError(response.message || 'Failed to load duel data');
+          // Fallback to placeholder data if API fails
+          loadPlaceholderData();
+        }
+      } catch (err) {
+        console.error('Error loading duel:', err);
+        setError('Network error occurred');
+        // Fallback to placeholder data if network fails
+        loadPlaceholderData();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const loadPlaceholderData = () => {
+      // PLACEHOLDER DATA - Replace with real API data
+      // This is only used when no duelId is provided or API fails
+      const placeholderDuel: Partial<Duel> = {
+        _id: 'placeholder-duel',
+        user1: {
+          _id: 'user1',
+          username: 'You',
+          email: 'you@example.com',
+          walletAddress: '0x123...',
+          totalEarnings: 0,
+          totalDuels: 0,
+          wonDuels: 0,
+          createdAt: new Date().toISOString(),
+        },
+        user2: {
+          _id: 'user2',
+          username: 'Sarah Johnson',
+          email: 'sarah@example.com',
+          walletAddress: '0x456...',
+          totalEarnings: 0,
+          totalDuels: 0,
+          wonDuels: 0,
+          createdAt: new Date().toISOString(),
+        },
+        challengeType: 'steps',
+        stakeAmount: 50,
+        duration: 1440, // 24 hours
+        status: previous ? 'completed' : 'active',
+        startTime: '2024-01-15T08:00:00Z',
+        endTime: previous ? '2024-01-16T08:00:00Z' : undefined,
+        user1Progress: previous ? 15247 : 12847,
+        user2Progress: previous ? 13892 : 11523,
+        winner: previous ? 'user1' : undefined,
+        createdAt: new Date().toISOString(),
+      };
+
+      setDuel(placeholderDuel as Duel);
+      setLoading(false);
+    };
+
+    if (duelId && typeof duelId === 'string') {
+      loadDuelData();
+    } else {
+      // Use placeholder data if no duelId (for demo purposes)
+      loadPlaceholderData();
+    }
+  }, [duelId, previous]);
+
+  const retryLoadDuel = async () => {
+    if (duelId && typeof duelId === 'string') {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await apiService.getDuel(duelId as string);
+
+        if (response.success && response.data) {
+          setDuel(response.data);
+        } else {
+          setError(response.message || 'Failed to load duel data');
+        }
+      } catch (err) {
+        console.error('Error loading duel:', err);
+        setError('Network error occurred');
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
+  if (loading) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <ActivityIndicator size='large' color='#667eea' />
+        <Text style={styles.loadingText}>Loading duel details...</Text>
+      </View>
+    );
+  }
+
+  if (error && !duel) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>Error: {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={retryLoadDuel}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (!duel) {
+    return (
+      <View style={[styles.container, styles.centered]}>
+        <Text style={styles.errorText}>Duel not found</Text>
+      </View>
+    );
+  }
+
+  // Calculate duel statistics
+  const isCompleted = duel.status === 'completed';
+  const isWinning = (duel.user1Progress || 0) > (duel.user2Progress || 0);
+  const stepDifference = Math.abs(
+    (duel.user1Progress || 0) - (duel.user2Progress || 0)
+  );
+  const targetSteps = 15000; // This should come from challenge data
+
+  // Transform duel data for display
   const duelData = {
-    opponent: 'Sarah Johnson',
-    startTime: '2024-01-15 08:00',
-    endTime: previous ? '2024-01-16 08:00' : null,
-    duration: '24h',
-    stake: '50 FITFI',
-    status: previous ? 'Completed' : 'Live',
-    timeLeft: previous ? null : '4h 23m',
+    opponent: duel.user2.username,
+    startTime: duel.startTime
+      ? new Date(duel.startTime).toLocaleString()
+      : 'Not started',
+    endTime: duel.endTime ? new Date(duel.endTime).toLocaleString() : null,
+    duration: `${Math.floor(duel.duration / 60)}h`,
+    stake: `${duel.stakeAmount} FITFI`,
+    status: isCompleted ? 'Completed' : 'Live',
+    timeLeft: isCompleted ? null : '4h 23m', // Calculate this from actual end time
     player1: {
-      name: 'You',
+      name: duel.user1.username,
       avatar: '👤',
-      currentSteps: previous ? 15247 : 12847,
-      targetSteps: 15000,
-      caloriesBurned: previous ? 720 : 615,
-      distance: previous ? 11.2 : 9.8,
-      activeMinutes: previous ? 142 : 118,
+      currentSteps: duel.user1Progress || 0,
+      targetSteps: targetSteps,
+      caloriesBurned: Math.floor((duel.user1Progress || 0) * 0.047), // Rough calculation
+      distance: parseFloat(((duel.user1Progress || 0) * 0.0008).toFixed(1)), // Rough calculation
+      activeMinutes: Math.floor((duel.user1Progress || 0) * 0.009), // Rough calculation
     },
     player2: {
-      name: 'Sarah Johnson',
+      name: duel.user2.username,
       avatar: '👩',
-      currentSteps: previous ? 13892 : 11523,
-      targetSteps: 15000,
-      caloriesBurned: previous ? 658 : 548,
-      distance: previous ? 10.1 : 8.4,
-      activeMinutes: previous ? 128 : 105,
+      currentSteps: duel.user2Progress || 0,
+      targetSteps: targetSteps,
+      caloriesBurned: Math.floor((duel.user2Progress || 0) * 0.047), // Rough calculation
+      distance: parseFloat(((duel.user2Progress || 0) * 0.0008).toFixed(1)), // Rough calculation
+      activeMinutes: Math.floor((duel.user2Progress || 0) * 0.009), // Rough calculation
     },
-    winner: previous ? 'You' : null,
+    winner:
+      duel.winner === duel.user1._id
+        ? 'You'
+        : duel.winner === duel.user2._id
+          ? duel.user2.username
+          : null,
   };
-
-  const isWinning =
-    duelData.player1.currentSteps > duelData.player2.currentSteps;
-  const stepDifference = Math.abs(
-    duelData.player1.currentSteps - duelData.player2.currentSteps
-  );
 
   const PlayerCard = ({ player, isYou, isWinner }) => (
     <View style={[styles.playerCard, isWinner && styles.winnerCard]}>
@@ -214,6 +351,33 @@ const lightStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#64748b',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#dc2626',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
@@ -464,6 +628,33 @@ const darkStyles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#0f172a',
+  },
+  centered: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#cbd5e1',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#f87171',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#4f46e5',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
