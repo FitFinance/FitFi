@@ -12,9 +12,11 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.fitfi.app",
+      "versionCode": 1,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#667eea"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
@@ -24,6 +26,10 @@
         "android.permission.health.READ_EXERCISE",
         "android.permission.ACTIVITY_RECOGNITION",
         "android.permission.BODY_SENSORS"
+      ],
+      "blockedPermissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "web": {

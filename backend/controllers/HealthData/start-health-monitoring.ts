@@ -4,7 +4,7 @@ import Duels from '../../models/DuelsModel.js';
 import HealthData from '../../models/HealthDataModel.js';
 import Challenge from '../../models/ChallengeModel.js';
 import { getIO } from '../../services/sockets/index.js';
-import DuelStakingService from '../../services/DuelStakingService.js';
+import { DuelStakingService } from '../../services/DuelStakingService.js';
 
 /**
  * Start health monitoring for an active duel

@@ -343,4 +343,6 @@ export class DuelStakingService {
 }
 
 // Singleton instance
-export const duelStakingService: DuelStakingService = new DuelStakingService();
+const duelStakingService: DuelStakingService = new DuelStakingService();
+
+export { duelStakingService };
