@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from './config';
 
 export interface ApiResponse<T = any> {
@@ -68,6 +69,17 @@ class ApiService {
     this.token = token;
   }
 
+  async initializeAuth() {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (token) {
+        this.token = token;
+      }
+    } catch (error) {
+      console.error('Failed to load auth token:', error);
+    }
+  }
+
   private async makeRequest<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -89,6 +101,30 @@ class ApiService {
         ...options,
         headers,
       });
+
+      // Check if response is JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await response.text();
+        console.error(
+          '❌ API Error - Non-JSON response:',
+          text.substring(0, 200)
+        );
+
+        if (response.status === 401) {
+          return {
+            success: false,
+            message: 'Authentication required. Please log in.',
+            error: 'UNAUTHORIZED',
+          };
+        }
+
+        return {
+          success: false,
+          message: `Server error (${response.status}): Expected JSON response but got ${contentType}`,
+          error: 'INVALID_RESPONSE',
+        };
+      }
 
       const data = await response.json();
 
@@ -118,6 +154,32 @@ class ApiService {
   }
 
   // Auth endpoints
+  async requestNonce(
+    walletAddress: string
+  ): Promise<ApiResponse<{ nonce: number; user?: any }>> {
+    return this.makeRequest('/auth/get-nonce', {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress }),
+    });
+  }
+
+  async verifyAndLogin(
+    walletAddress: string,
+    signature: string,
+    nonce: number
+  ): Promise<
+    ApiResponse<{
+      token: string;
+      walletAddress: string;
+      nonce: number;
+    }>
+  > {
+    return this.makeRequest('/auth/verify-and-login', {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress, signature, nonce }),
+    });
+  }
+
   async login(
     email: string,
     password: string
@@ -154,8 +216,8 @@ class ApiService {
 
   // Duels endpoints
   async getDuels(userId?: string): Promise<ApiResponse<Duel[]>> {
-    const query = userId ? `?userId=${userId}` : '';
-    return this.makeRequest(`/duels${query}`);
+    // Use the active duels endpoint which returns all duels for the authenticated user
+    return this.makeRequest('/duels/active');
   }
 
   async getDuel(duelId: string): Promise<ApiResponse<Duel>> {
@@ -237,6 +299,13 @@ class ApiService {
       console.error('❌ Connection test failed:', error);
       return false;
     }
+  }
+
+  // Challenge endpoints
+  async getAvailableChallenges(): Promise<ApiResponse<any[]>> {
+    // For now, use the same endpoint as getChallenges
+    // In the future, this could be a separate endpoint for available challenges
+    return this.makeRequest('/challenges');
   }
 }
 

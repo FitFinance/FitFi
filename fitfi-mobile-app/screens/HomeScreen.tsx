@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -19,29 +19,110 @@ export default function HomeScreen() {
   const styles = useThemeStyles(lightStyles, darkStyles);
   const [loading, setLoading] = useState(false);
   const [userData, setUserData] = useState(null);
+  const [duelsData, setDuelsData] = useState([]);
+  const [challengesData, setChallengesData] = useState([]);
+  const [availableChallenges, setAvailableChallenges] = useState([]);
+  const [healthData, setHealthData] = useState(null);
 
-  useEffect(() => {
-    // Test API connection when component mounts
-    testApiConnection();
-  }, []);
-
-  const testApiConnection = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const isConnected = await apiService.testConnection();
-      console.log('API Connection:', isConnected ? 'Connected' : 'Failed');
+      // Initialize authentication before making API calls
+      await apiService.initializeAuth();
 
-      // If connected, try to get user profile (this will fail without auth token)
-      if (isConnected) {
-        const profile = await apiService.getProfile();
-        if (profile.success) {
-          setUserData(profile.data);
-        }
-      }
+      await Promise.all([
+        loadUserProfile(),
+        loadDuels(),
+        loadChallenges(),
+        loadAvailableChallenges(),
+        loadHealthData(),
+      ]);
     } catch (error) {
-      console.error('API test failed:', error);
+      console.error('Failed to load data:', error);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const loadUserProfile = async () => {
+    try {
+      const profile = await apiService.getProfile();
+      if (profile.success) {
+        setUserData(profile.data);
+      }
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+    }
+  };
+
+  const loadDuels = async () => {
+    try {
+      const duels = await apiService.getDuels();
+      if (duels.success) {
+        setDuelsData(duels.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load duels:', error);
+    }
+  };
+
+  const loadChallenges = async () => {
+    try {
+      const challenges = await apiService.getChallenges();
+      if (challenges.success) {
+        setChallengesData(challenges.data || []);
+      }
+    } catch (error) {
+      console.error('Failed to load challenges:', error);
+    }
+  };
+
+  const loadHealthData = async () => {
+    try {
+      // This would be replaced with actual health data API call
+      // For now, show no data instead of mock data
+      setHealthData(null);
+    } catch (error) {
+      console.error('Failed to load health data:', error);
+    }
+  };
+
+  const loadAvailableChallenges = async () => {
+    try {
+      const response = await apiService.getAvailableChallenges();
+      if (response.success && response.data) {
+        setAvailableChallenges(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to load available challenges:', error);
+      setAvailableChallenges([]);
+    }
+  };
+
+  const joinChallenge = async (challengeId: string) => {
+    try {
+      // Note: The backend doesn't currently have a join challenge endpoint
+      // For now, we'll just show a message
+      console.log('Challenge join requested for:', challengeId);
+      console.log(
+        'Note: Join challenge functionality needs to be implemented in the backend'
+      );
+
+      // TODO: Implement actual join challenge API call when backend supports it
+      // const response = await apiService.joinChallenge(challengeId);
+      // if (response.success) {
+      //   await loadChallenges();
+      //   await loadAvailableChallenges();
+      //   console.log('Successfully joined challenge!');
+      // } else {
+      //   console.error('Failed to join challenge:', response.message);
+      // }
+    } catch (error) {
+      console.error('Error joining challenge:', error);
     }
   };
 
@@ -76,41 +157,148 @@ export default function HomeScreen() {
         </View>
       </View>
 
-      {/* Stats Cards - Using placeholder data since we don't have health data API yet */}
+      {/* Stats Cards - Real health data (when available) */}
       <View style={styles.statsContainer}>
-        <View style={[styles.statCard, styles.primaryCard]}>
-          <Text style={styles.statNumber}>10,247</Text>
-          <Text style={styles.statLabel}>Steps Today (Mock)</Text>
-          <View style={styles.statProgress}>
-            <View style={[styles.progressBar, { width: '75%' }]} />
-          </View>
-        </View>
+        {healthData ? (
+          <>
+            <View style={[styles.statCard, styles.primaryCard]}>
+              <Text style={styles.statNumber}>
+                {healthData.steps?.toLocaleString() || '0'}
+              </Text>
+              <Text style={styles.statLabel}>Steps Today</Text>
+              <View style={styles.statProgress}>
+                <View
+                  style={[
+                    styles.progressBar,
+                    {
+                      width: `${Math.min((healthData.steps / 10000) * 100, 100)}%`,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
 
-        <View style={styles.miniStatsRow}>
-          <View style={[styles.miniStatCard, styles.calorieCard]}>
-            <Text style={styles.miniStatNumber}>547</Text>
-            <Text style={styles.miniStatLabel}>Calories (Mock)</Text>
+            <View style={styles.miniStatsRow}>
+              <View style={[styles.miniStatCard, styles.calorieCard]}>
+                <Text style={styles.miniStatNumber}>
+                  {healthData.calories || '0'}
+                </Text>
+                <Text style={styles.miniStatLabel}>Calories</Text>
+              </View>
+              <View style={[styles.miniStatCard, styles.timeCard]}>
+                <Text style={styles.miniStatNumber}>
+                  {healthData.activeTime || '0m'}
+                </Text>
+                <Text style={styles.miniStatLabel}>Active Time</Text>
+              </View>
+            </View>
+          </>
+        ) : (
+          <View style={[styles.statCard, styles.primaryCard]}>
+            <Text style={styles.statNumber}>--</Text>
+            <Text style={styles.statLabel}>No Health Data Available</Text>
+            <Text style={styles.statSubtext}>
+              Connect a fitness tracker to see your stats
+            </Text>
           </View>
-          <View style={[styles.miniStatCard, styles.timeCard]}>
-            <Text style={styles.miniStatNumber}>1h 23m</Text>
-            <Text style={styles.miniStatLabel}>Active Time (Mock)</Text>
-          </View>
-        </View>
+        )}
       </View>
 
-      {/* Active Challenges Section - Placeholder data */}
+      {/* Active Challenges Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>🏆 Active Challenges (Mock)</Text>
-        <View style={styles.challengeCard}>
-          <View style={styles.challengeHeader}>
-            <Text style={styles.challengeTitle}>Weekly Step Challenge</Text>
-            <Text style={styles.challengeReward}>+50 FITFI</Text>
+        <Text style={styles.sectionTitle}>🏆 Active Challenges</Text>
+        {challengesData.length > 0 ? (
+          challengesData.slice(0, 2).map((challenge: any, index: number) => (
+            <View key={index} style={styles.challengeCard}>
+              <View style={styles.challengeHeader}>
+                <Text style={styles.challengeTitle}>
+                  {challenge.title || 'Challenge'}
+                </Text>
+                <Text style={styles.challengeReward}>
+                  +{challenge.reward || '0'} FITFI
+                </Text>
+              </View>
+              <Text style={styles.challengeProgress}>
+                {challenge.progress || 'In Progress'}
+              </Text>
+              <View style={styles.progressContainer}>
+                <View
+                  style={[
+                    styles.challengeProgressBar,
+                    { width: `${challenge.progressPercentage || 0}%` },
+                  ]}
+                />
+              </View>
+            </View>
+          ))
+        ) : (
+          <View style={styles.challengeCard}>
+            <Text style={styles.emptyStateText}>No active challenges</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Join a challenge to start earning rewards!
+            </Text>
+            <TouchableOpacity style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>Browse Challenges</Text>
+            </TouchableOpacity>
           </View>
-          <Text style={styles.challengeProgress}>6/7 days completed</Text>
-          <View style={styles.progressContainer}>
-            <View style={[styles.challengeProgressBar, { width: '85%' }]} />
-          </View>
+        )}
+      </View>
+
+      {/* Available Challenges Section */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>🎯 Available Challenges</Text>
+          <TouchableOpacity onPress={() => router.push('/challenges')}>
+            <Text style={styles.viewAllText}>View All</Text>
+          </TouchableOpacity>
         </View>
+        {availableChallenges.length > 0 ? (
+          availableChallenges
+            .slice(0, 3)
+            .map((challenge: any, index: number) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.availableChallengeCard}
+                onPress={() => joinChallenge(challenge._id)}
+              >
+                <View style={styles.challengeContent}>
+                  <View style={styles.challengeInfo}>
+                    <Text style={styles.challengeTitle}>
+                      {challenge.title ||
+                        `${challenge.challengeType} Challenge`}
+                    </Text>
+                    <Text style={styles.challengeDescription}>
+                      {challenge.description ||
+                        `Complete ${challenge.target} ${challenge.challengeType} in ${challenge.duration}h`}
+                    </Text>
+                    <View style={styles.challengeDetails}>
+                      <Text style={styles.challengeTarget}>
+                        🎯 {challenge.target?.toLocaleString()}
+                      </Text>
+                      <Text style={styles.challengeDuration}>
+                        ⏱️ {challenge.duration}h
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.challengeRewardSection}>
+                    <Text style={styles.challengeReward}>
+                      +{challenge.reward || 10} FITFI
+                    </Text>
+                    <View style={styles.joinButton}>
+                      <Text style={styles.joinButtonText}>Join</Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))
+        ) : (
+          <View style={styles.challengeCard}>
+            <Text style={styles.emptyStateText}>No challenges available</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Check back later for new challenges!
+            </Text>
+          </View>
+        )}
       </View>
 
       {/* Development Debug Panel - Only shown in development */}
@@ -135,21 +323,52 @@ export default function HomeScreen() {
         </View>
       )}
 
-      {/* Recent Duels Section - Placeholder data */}
+      {/* Recent Duels Section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>⚔️ Recent Duels (Mock)</Text>
-        <View style={styles.duelCard}>
-          <View style={styles.duelInfo}>
-            <Text style={styles.duelOpponent}>vs. Sarah Johnson</Text>
-            <Text style={styles.duelResult}>Victory +25 FITFI</Text>
+        <Text style={styles.sectionTitle}>⚔️ Recent Duels</Text>
+        {duelsData.length > 0 ? (
+          <>
+            {duelsData.slice(0, 3).map((duel: any, index: number) => (
+              <TouchableOpacity
+                key={index}
+                style={styles.duelCard}
+                onPress={() => router.push(`/duel-details?id=${duel._id}`)}
+              >
+                <View style={styles.duelInfo}>
+                  <Text style={styles.duelOpponent}>
+                    vs. {duel.opponent?.username || 'Unknown Player'}
+                  </Text>
+                  <Text style={styles.duelResult}>
+                    {duel.status === 'completed'
+                      ? duel.winner
+                        ? 'Victory'
+                        : 'Defeat'
+                      : duel.status}
+                    {duel.reward && ` +${duel.reward} FITFI`}
+                  </Text>
+                </View>
+                <View style={styles.duelStats}>
+                  <Text style={styles.duelStatText}>
+                    {duel.yourStats || 'In Progress'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.viewAllButton}>
+              <Text style={styles.viewAllText}>View All Duels</Text>
+            </TouchableOpacity>
+          </>
+        ) : (
+          <View style={styles.duelCard}>
+            <Text style={styles.emptyStateText}>No recent duels</Text>
+            <Text style={styles.emptyStateSubtext}>
+              Start your first duel to compete with other players!
+            </Text>
+            <TouchableOpacity style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>Find Opponents</Text>
+            </TouchableOpacity>
           </View>
-          <View style={styles.duelStats}>
-            <Text style={styles.duelStatText}>12,340 steps</Text>
-          </View>
-        </View>
-        <TouchableOpacity style={styles.viewAllButton}>
-          <Text style={styles.viewAllText}>View All Duels</Text>
-        </TouchableOpacity>
+        )}
       </View>
     </ScrollView>
   );
@@ -622,5 +841,37 @@ const darkStyles = StyleSheet.create({
     color: '#fff',
     fontWeight: '600',
     fontSize: 14,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  emptyStateSubtext: {
+    fontSize: 14,
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 16,
+    opacity: 0.7,
+  },
+  primaryButton: {
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignSelf: 'center',
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontWeight: '600',
+    fontSize: 16,
+  },
+  statSubtext: {
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.7)',
+    textAlign: 'center',
+    marginTop: 8,
   },
 });

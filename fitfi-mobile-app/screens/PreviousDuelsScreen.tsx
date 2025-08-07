@@ -1,69 +1,98 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, useThemeStyles } from '../contexts/ThemeContext';
-
-const duels = [
-  {
-    id: '1',
-    opponent: 'Alice Johnson',
-    winner: 'You',
-    yourSteps: 12847,
-    opponentSteps: 11532,
-    reward: '+35 FITFI',
-    date: '2 days ago',
-    duration: '24h',
-  },
-  {
-    id: '2',
-    opponent: 'Bob Smith',
-    winner: 'Bob Smith',
-    yourSteps: 9456,
-    opponentSteps: 10892,
-    reward: '-20 FITFI',
-    date: '5 days ago',
-    duration: '24h',
-  },
-  {
-    id: '3',
-    opponent: 'Sarah Wilson',
-    winner: 'You',
-    yourSteps: 15234,
-    opponentSteps: 13892,
-    reward: '+50 FITFI',
-    date: '1 week ago',
-    duration: '48h',
-  },
-  {
-    id: '4',
-    opponent: 'Mike Davis',
-    winner: 'Mike Davis',
-    yourSteps: 8763,
-    opponentSteps: 9234,
-    reward: '-15 FITFI',
-    date: '2 weeks ago',
-    duration: '24h',
-  },
-];
+import { useThemeStyles } from '../contexts/ThemeContext';
+import { apiService } from '../utils/ApiService';
 
 export default function PreviousDuelsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { theme, isDark } = useTheme();
-
-  // Theme-aware styles
   const styles = useThemeStyles(lightStyles, darkStyles);
 
+  const [duels, setDuels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadPreviousDuels();
+  }, []);
+
+  const loadPreviousDuels = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Initialize authentication before making API calls
+      await apiService.initializeAuth();
+
+      const response = await apiService.getDuels();
+
+      if (response.success && response.data) {
+        // Filter only completed duels
+        const completedDuels = response.data.filter(
+          (duel) => duel.status === 'completed'
+        );
+        setDuels(completedDuels);
+      } else {
+        if (response.error === 'UNAUTHORIZED') {
+          setError('Please log in to view your duel history');
+        } else {
+          setError(response.message || 'Failed to load previous duels');
+        }
+      }
+    } catch (err) {
+      console.error('Error loading previous duels:', err);
+      setError('Network error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderDuelCard = ({ item }) => {
-    const isWinner = item.winner === 'You';
-    const isPositiveReward = item.reward.startsWith('+');
+    const isWinner = item.winner === item.user1?._id;
+    const opponent = item.user2?.username || 'Unknown User';
+    const yourSteps = item.user1Progress || 0;
+    const opponentSteps = item.user2Progress || 0;
+
+    // Calculate reward (this would come from backend ideally)
+    const stakeDifference = isWinner ? item.stakeAmount : -item.stakeAmount;
+    const reward = `${stakeDifference >= 0 ? '+' : ''}${stakeDifference} FITFI`;
+    const isPositiveReward = stakeDifference >= 0;
+
+    // Calculate date
+    const endDate = new Date(item.endTime);
+    const now = new Date();
+    const daysDiff = Math.floor(
+      (now.getTime() - endDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    const dateDisplay =
+      daysDiff === 0
+        ? 'Today'
+        : daysDiff === 1
+          ? '1 day ago'
+          : daysDiff < 7
+            ? `${daysDiff} days ago`
+            : daysDiff < 14
+              ? '1 week ago'
+              : `${Math.floor(daysDiff / 7)} weeks ago`;
+
+    // Calculate duration
+    const startDate = new Date(item.startTime);
+    const durationHours = Math.floor(
+      (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)
+    );
+    const durationDisplay =
+      durationHours < 24
+        ? `${durationHours}h`
+        : `${Math.floor(durationHours / 24)}d`;
 
     return (
       <TouchableOpacity
@@ -71,13 +100,13 @@ export default function PreviousDuelsScreen() {
         onPress={() =>
           router.push({
             pathname: '/duel-details',
-            params: { duelId: item.id, previous: true },
+            params: { duelId: item._id, previous: true },
           })
         }
       >
         <View style={styles.cardHeader}>
           <View style={styles.opponentInfo}>
-            <Text style={styles.opponentName}>vs. {item.opponent}</Text>
+            <Text style={styles.opponentName}>vs. {opponent}</Text>
             <View
               style={[
                 styles.resultBadge,
@@ -98,7 +127,7 @@ export default function PreviousDuelsScreen() {
                   : styles.negativeReward,
               ]}
             >
-              {item.reward}
+              {reward}
             </Text>
           </View>
         </View>
@@ -108,7 +137,7 @@ export default function PreviousDuelsScreen() {
             <View style={styles.statColumn}>
               <Text style={styles.statLabel}>Your Steps</Text>
               <Text style={[styles.statValue, isWinner && styles.winnerValue]}>
-                {item.yourSteps.toLocaleString()}
+                {yourSteps.toLocaleString()}
               </Text>
             </View>
             <View style={styles.vsContainer}>
@@ -117,7 +146,7 @@ export default function PreviousDuelsScreen() {
             <View style={styles.statColumn}>
               <Text style={styles.statLabel}>Opponent</Text>
               <Text style={[styles.statValue, !isWinner && styles.winnerValue]}>
-                {item.opponentSteps.toLocaleString()}
+                {opponentSteps.toLocaleString()}
               </Text>
             </View>
           </View>
@@ -125,25 +154,83 @@ export default function PreviousDuelsScreen() {
           <View style={styles.difference}>
             <Text style={styles.differenceText}>
               {isWinner
-                ? `Won by ${(item.yourSteps - item.opponentSteps).toLocaleString()} steps`
-                : `Lost by ${(item.opponentSteps - item.yourSteps).toLocaleString()} steps`}
+                ? `Won by ${(yourSteps - opponentSteps).toLocaleString()} steps`
+                : `Lost by ${(opponentSteps - yourSteps).toLocaleString()} steps`}
             </Text>
           </View>
         </View>
 
         <View style={styles.cardFooter}>
-          <Text style={styles.dateText}>📅 {item.date}</Text>
-          <Text style={styles.durationText}>⏱️ {item.duration} duel</Text>
+          <Text style={styles.dateText}>📅 {dateDisplay}</Text>
+          <Text style={styles.durationText}>⏱️ {durationDisplay} duel</Text>
         </View>
       </TouchableOpacity>
     );
   };
 
-  const wins = duels.filter((duel) => duel.winner === 'You').length;
+  const wins = duels.filter((duel) => duel.winner === duel.user1?._id).length;
   const totalReward = duels.reduce((sum, duel) => {
-    const value = parseInt(duel.reward.replace(/[^0-9-]/g, ''));
-    return sum + value;
+    const isWinner = duel.winner === duel.user1?._id;
+    const stakeDifference = isWinner ? duel.stakeAmount : -duel.stakeAmount;
+    return sum + stakeDifference;
   }, 0);
+
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          styles.centerContent,
+          { paddingTop: insets.top },
+        ]}
+      >
+        <ActivityIndicator size='large' color='#667eea' />
+        <Text style={styles.loadingText}>Loading duel history...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={[
+          styles.container,
+          styles.centerContent,
+          { paddingTop: insets.top },
+        ]}
+      >
+        <Text style={styles.errorText}>❌ {error}</Text>
+        <TouchableOpacity
+          style={styles.retryButton}
+          onPress={loadPreviousDuels}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (duels.length === 0) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text style={styles.title}>📜 Duel History</Text>
+        </View>
+        <View style={styles.centerContent}>
+          <Text style={styles.emptyText}>📜 No completed duels</Text>
+          <Text style={styles.emptySubtext}>
+            Complete some duels to see your history here!
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => router.push('/challenges')}
+          >
+            <Text style={styles.primaryButtonText}>Start First Duel</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -357,6 +444,57 @@ const lightStyles = StyleSheet.create({
     fontSize: 12,
     color: '#9ca3af',
   },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#64748b',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#64748b',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 // Dark theme styles
@@ -532,5 +670,56 @@ const darkStyles = StyleSheet.create({
   durationText: {
     fontSize: 12,
     color: '#94a3b8',
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#cbd5e1',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#cbd5e1',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

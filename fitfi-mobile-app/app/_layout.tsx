@@ -1,3 +1,4 @@
+import '../polyfills';
 import { Stack } from 'expo-router';
 import { ThemeProvider } from '../contexts/ThemeContext';
 import ThemeManager from '../components/ThemeManager';
@@ -8,6 +9,7 @@ export default function RootLayout() {
     <ThemeProvider>
       <ThemeManager>
         <Stack>
+          <Stack.Screen name='login' options={{ headerShown: false }} />
           <Stack.Screen name='(tabs)' options={{ headerShown: false }} />
           <Stack.Screen
             name='duel-details'

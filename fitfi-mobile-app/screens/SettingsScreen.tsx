@@ -6,19 +6,57 @@ import {
   Switch,
   TouchableOpacity,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, useThemeStyles } from '../contexts/ThemeContext';
+import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { apiService } from '../utils/ApiService';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { theme, isDark, setTheme } = useTheme();
+  const router = useRouter();
   const [notifications, setNotifications] = useState(true);
   const [autoJoinDuels, setAutoJoinDuels] = useState(false);
   const [shareActivity, setShareActivity] = useState(true);
 
   // Theme-aware styles
   const styles = useThemeStyles(lightStyles, darkStyles);
+
+  const handleLogout = () => {
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Logout',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            // Clear all stored auth data
+            await AsyncStorage.multiRemove([
+              'userToken',
+              'walletAddress',
+              'userEmail',
+              'userData',
+            ]);
+
+            // Clear token from API service
+            apiService.setAuthToken(null);
+
+            // Navigate back to login
+            router.replace('/login');
+          } catch (error) {
+            console.error('Logout error:', error);
+            Alert.alert('Error', 'Failed to logout. Please try again.');
+          }
+        },
+      },
+    ]);
+  };
 
   const SettingItem = ({ title, subtitle, children, showBorder = true }) => (
     <View style={[styles.settingItem, !showBorder && styles.noBorder]}>
@@ -157,6 +195,15 @@ export default function SettingsScreen() {
         </TouchableOpacity>
         <TouchableOpacity style={styles.actionButton}>
           <Text style={styles.actionButtonText}>📊 Export Data</Text>
+          <Text style={styles.actionButtonArrow}>→</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.actionButton, { borderBottomWidth: 0 }]}
+          onPress={handleLogout}
+        >
+          <Text style={[styles.actionButtonText, { color: '#ef4444' }]}>
+            🚪 Logout
+          </Text>
           <Text style={styles.actionButtonArrow}>→</Text>
         </TouchableOpacity>
       </SettingSection>

@@ -35,65 +35,20 @@ export default function DuelDetailsScreen() {
           setDuel(response.data);
         } else {
           setError(response.message || 'Failed to load duel data');
-          // Fallback to placeholder data if API fails
-          loadPlaceholderData();
         }
       } catch (err) {
         console.error('Error loading duel:', err);
         setError('Network error occurred');
-        // Fallback to placeholder data if network fails
-        loadPlaceholderData();
       } finally {
         setLoading(false);
       }
     };
 
-    const loadPlaceholderData = () => {
-      // PLACEHOLDER DATA - Replace with real API data
-      // This is only used when no duelId is provided or API fails
-      const placeholderDuel: Partial<Duel> = {
-        _id: 'placeholder-duel',
-        user1: {
-          _id: 'user1',
-          username: 'You',
-          email: 'you@example.com',
-          walletAddress: '0x123...',
-          totalEarnings: 0,
-          totalDuels: 0,
-          wonDuels: 0,
-          createdAt: new Date().toISOString(),
-        },
-        user2: {
-          _id: 'user2',
-          username: 'Sarah Johnson',
-          email: 'sarah@example.com',
-          walletAddress: '0x456...',
-          totalEarnings: 0,
-          totalDuels: 0,
-          wonDuels: 0,
-          createdAt: new Date().toISOString(),
-        },
-        challengeType: 'steps',
-        stakeAmount: 50,
-        duration: 1440, // 24 hours
-        status: previous ? 'completed' : 'active',
-        startTime: '2024-01-15T08:00:00Z',
-        endTime: previous ? '2024-01-16T08:00:00Z' : undefined,
-        user1Progress: previous ? 15247 : 12847,
-        user2Progress: previous ? 13892 : 11523,
-        winner: previous ? 'user1' : undefined,
-        createdAt: new Date().toISOString(),
-      };
-
-      setDuel(placeholderDuel as Duel);
-      setLoading(false);
-    };
-
     if (duelId && typeof duelId === 'string') {
       loadDuelData();
     } else {
-      // Use placeholder data if no duelId (for demo purposes)
-      loadPlaceholderData();
+      setError('No duel ID provided');
+      setLoading(false);
     }
   }, [duelId, previous]);
 

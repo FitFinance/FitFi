@@ -1,86 +1,123 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeStyles } from '../contexts/ThemeContext';
-
-const duels = [
-  {
-    id: '1',
-    opponent: 'Alice Johnson',
-    status: 'Live',
-    yourSteps: 8247,
-    opponentSteps: 7832,
-    timeLeft: '2h 15m',
-    stake: '25 FITFI',
-  },
-  {
-    id: '2',
-    opponent: 'Bob Smith',
-    status: 'Live',
-    yourSteps: 6543,
-    opponentSteps: 7012,
-    timeLeft: '5h 42m',
-    stake: '50 FITFI',
-  },
-  {
-    id: '3',
-    opponent: 'Sarah Wilson',
-    status: 'Waiting',
-    yourSteps: 0,
-    opponentSteps: 0,
-    timeLeft: 'Starts in 30m',
-    stake: '10 FITFI',
-  },
-];
+import { apiService } from '../utils/ApiService';
 
 export default function ActiveDuelsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const styles = useThemeStyles(lightStyles, darkStyles);
 
+  const [duels, setDuels] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadActiveDuels();
+  }, []);
+
+  const loadActiveDuels = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Initialize authentication before making API calls
+      await apiService.initializeAuth();
+
+      const response = await apiService.getDuels();
+
+      if (response.success && response.data) {
+        // Filter only active duels
+        const activeDuels = response.data.filter(
+          (duel) =>
+            duel.status === 'active' ||
+            duel.status === 'pending' ||
+            duel.status === 'searching' ||
+            duel.status === 'accepted'
+        );
+        setDuels(activeDuels);
+      } else {
+        if (response.error === 'UNAUTHORIZED') {
+          setError('Please log in to view your active duels');
+        } else {
+          setError(response.message || 'Failed to load active duels');
+        }
+      }
+    } catch (err) {
+      console.error('Error loading active duels:', err);
+      setError('Network error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderDuelCard = ({ item }) => {
-    const isLive = item.status === 'Live';
-    const isWinning = item.yourSteps > item.opponentSteps;
+    const isLive = item.status === 'active';
+    const isWinning = item.user1Progress > item.user2Progress;
+    const opponent = item.user2?.username || 'Unknown User';
+    const yourSteps = item.user1Progress || 0;
+    const opponentSteps = item.user2Progress || 0;
+
+    // Calculate time remaining
+    const timeLeft = item.endTime
+      ? new Date(item.endTime).getTime() - new Date().getTime()
+      : 0;
+
+    const hoursLeft = Math.max(0, Math.floor(timeLeft / (1000 * 60 * 60)));
+    const minutesLeft = Math.max(
+      0,
+      Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
+    );
+    const timeDisplay =
+      timeLeft > 0
+        ? `${hoursLeft}h ${minutesLeft}m`
+        : item.status === 'pending'
+          ? 'Starting soon'
+          : 'Ended';
 
     return (
       <TouchableOpacity
         style={[styles.duelCard, isLive && isWinning && styles.winningCard]}
         onPress={() => {
-          if (item.status === 'Live' || item.status === 'Ready to Start') {
+          if (item.status === 'active') {
             router.push({
               pathname: '/duel-health-monitor',
-              params: { duelId: item.id },
+              params: { duelId: item._id },
             });
           } else {
             router.push({
               pathname: '/duel-details',
-              params: { duelId: item.id },
+              params: { duelId: item._id },
             });
           }
         }}
       >
         <View style={styles.cardHeader}>
           <View style={styles.opponentInfo}>
-            <Text style={styles.opponentName}>vs. {item.opponent}</Text>
+            <Text style={styles.opponentName}>vs. {opponent}</Text>
             <View
               style={[
                 styles.statusBadge,
-                item.status === 'Live'
+                item.status === 'active'
                   ? styles.liveStatus
                   : styles.waitingStatus,
               ]}
             >
-              <Text style={styles.statusText}>{item.status}</Text>
+              <Text style={styles.statusText}>
+                {item.status === 'active' ? 'Live' : 'Pending'}
+              </Text>
             </View>
           </View>
-          <Text style={styles.stake}>{item.stake}</Text>
+          <Text style={styles.stake}>{item.stakeAmount} FITFI</Text>
         </View>
 
         {isLive ? (
@@ -91,7 +128,7 @@ export default function ActiveDuelsScreen() {
                 <Text
                   style={[styles.statValue, isWinning && styles.winningValue]}
                 >
-                  {item.yourSteps.toLocaleString()}
+                  {yourSteps.toLocaleString()}
                 </Text>
               </View>
               <View style={styles.vsContainer}>
@@ -102,7 +139,7 @@ export default function ActiveDuelsScreen() {
                 <Text
                   style={[styles.statValue, !isWinning && styles.winningValue]}
                 >
-                  {item.opponentSteps.toLocaleString()}
+                  {opponentSteps.toLocaleString()}
                 </Text>
               </View>
             </View>
@@ -112,15 +149,15 @@ export default function ActiveDuelsScreen() {
                   style={[
                     styles.progressBar,
                     {
-                      width: `${Math.min((item.yourSteps / Math.max(item.yourSteps, item.opponentSteps)) * 100, 100)}%`,
+                      width: `${Math.min((yourSteps / Math.max(yourSteps, opponentSteps)) * 100, 100)}%`,
                     },
                   ]}
                 />
               </View>
               <Text style={styles.leadText}>
                 {isWinning
-                  ? `+${item.yourSteps - item.opponentSteps} ahead`
-                  : `${item.opponentSteps - item.yourSteps} behind`}
+                  ? `+${yourSteps - opponentSteps} ahead`
+                  : `${opponentSteps - yourSteps} behind`}
               </Text>
             </View>
           </View>
@@ -131,7 +168,7 @@ export default function ActiveDuelsScreen() {
         )}
 
         <View style={styles.cardFooter}>
-          <Text style={styles.timeLeft}>⏰ {item.timeLeft}</Text>
+          <Text style={styles.timeLeft}>⏰ {timeDisplay}</Text>
           <TouchableOpacity style={styles.viewButton}>
             <Text style={styles.viewButtonText}>View Details</Text>
           </TouchableOpacity>
@@ -139,6 +176,63 @@ export default function ActiveDuelsScreen() {
       </TouchableOpacity>
     );
   };
+
+  if (loading) {
+    return (
+      <View
+        style={[
+          styles.container,
+          styles.centerContent,
+          { paddingTop: insets.top },
+        ]}
+      >
+        <ActivityIndicator size='large' color='#667eea' />
+        <Text style={styles.loadingText}>Loading active duels...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View
+        style={[
+          styles.container,
+          styles.centerContent,
+          { paddingTop: insets.top },
+        ]}
+      >
+        <Text style={styles.errorText}>❌ {error}</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={loadActiveDuels}>
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  if (duels.length === 0) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <View style={styles.header}>
+          <Text style={styles.title}>⚔️ Active Duels</Text>
+          <Text style={styles.subtitle}>
+            Compete with others and earn FITFI tokens
+          </Text>
+        </View>
+        <View style={styles.centerContent}>
+          <Text style={styles.emptyText}>🎯 No active duels</Text>
+          <Text style={styles.emptySubtext}>
+            Start a new duel to compete with other users!
+          </Text>
+          <TouchableOpacity
+            style={styles.primaryButton}
+            onPress={() => router.push('/challenges')}
+          >
+            <Text style={styles.primaryButtonText}>Browse Challenges</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -323,6 +417,57 @@ const lightStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#64748b',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#64748b',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
 });
 
 // Dark theme styles
@@ -485,6 +630,57 @@ const darkStyles = StyleSheet.create({
   viewButtonText: {
     color: '#ffffff',
     fontSize: 14,
+    fontWeight: '600',
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#cbd5e1',
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  retryButton: {
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  emptyText: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#cbd5e1',
+    marginBottom: 8,
+  },
+  emptySubtext: {
+    fontSize: 16,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  primaryButton: {
+    backgroundColor: '#6366f1',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  primaryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
     fontWeight: '600',
   },
 });
