@@ -33,8 +33,8 @@ const requestNonce: fn = catchAsync(async (req: Request, res: Response) => {
       description:
         'A new user was created and a nonce was generated for authentication.',
     },
-    success: false,
-    status: 'error',
+    success: true,
+    status: 'success',
     statusCode: 200,
     data: {
       nonce: nonce,

@@ -23,12 +23,12 @@
 - Install with default settings
 - Install Android SDK (API 31+)
 
-#### **2. Install Java 11 JDK**
+#### **2. Install Java 21 JDK**
 
-Android development requires Java 11. Download and install:
+⚠️ **IMPORTANT:** Using JDK 21 (LTS) for optimal compatibility. Download and install:
 
-- **Microsoft OpenJDK 11**: https://learn.microsoft.com/en-us/java/openjdk/download
-- Or **Eclipse Temurin 11**: https://adoptium.net/
+- **Microsoft OpenJDK 21**: https://learn.microsoft.com/en-us/java/openjdk/download#openjdk-21
+- Or **Eclipse Temurin 21**: https://adoptium.net/temurin/releases/?version=21
 
 #### **3. Setup Environment Variables**
 
@@ -37,7 +37,7 @@ Add these to your Windows PATH and environment variables:
 **Environment Variables:**
 
 ```
-JAVA_HOME=C:\Program Files\Microsoft\jdk-11.0.xx.x-hotspot
+JAVA_HOME=C:\Program Files\Microsoft\jdk-21.0.xx.x-hotspot
 ANDROID_HOME=C:\Users\YourName\AppData\Local\Android\Sdk
 ANDROID_SDK_ROOT=C:\Users\YourName\AppData\Local\Android\Sdk
 ```
@@ -181,6 +181,26 @@ adb install android/app/build/outputs/apk/release/app-release.apk
 ---
 
 ## 🔧 **Troubleshooting Common Issues**
+
+### **"Android Gradle plugin requires Java 17/21"**
+
+⚠️ **This is a common error with newer Android Gradle versions**
+
+**Solution:**
+
+1. **Uninstall older Java versions** (if installed)
+2. **Download Java 21**: https://learn.microsoft.com/en-us/java/openjdk/download#openjdk-21
+3. **Update JAVA_HOME** to point to Java 21:
+   ```
+   JAVA_HOME=C:\Program Files\Microsoft\jdk-21.0.xx.x-hotspot
+   ```
+4. **Update gradle.properties** (already configured for JDK 21 with 12GB memory)
+5. **Restart Command Prompt/PowerShell**
+6. **Verify Java version**:
+   ```powershell
+   java -version
+   # Should show: openjdk version "21.0.x"
+   ```
 
 ### **"adb not found"**
 
