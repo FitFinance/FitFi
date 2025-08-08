@@ -185,29 +185,7 @@ class ApiService {
     });
   }
 
-  // OTP signup flow
-  async requestOtp(
-    walletAddress: string
-  ): Promise<
-    ApiResponse<{ exists: boolean; otpId?: number; txHash?: string }>
-  > {
-    return this.makeRequest('/auth/request-otp', {
-      method: 'POST',
-      body: JSON.stringify({ walletAddress }),
-    });
-  }
-
-  async verifyOtp(
-    walletAddress: string,
-    otp: string
-  ): Promise<
-    ApiResponse<{ token: string; walletAddress: string; nonce: number }>
-  > {
-    return this.makeRequest('/auth/verify-otp', {
-      method: 'POST',
-      body: JSON.stringify({ walletAddress, otp }),
-    });
-  }
+  // OTP signup flow removed
 
   async verifyAndLogin(
     walletAddress: string,

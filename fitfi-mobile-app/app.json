@@ -65,7 +65,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "./plugins/add-android-queries.js"
     ],
     "experiments": {
       "typedRoutes": true

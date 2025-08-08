@@ -2,9 +2,10 @@ import { Alert, Linking } from 'react-native';
 import SignClient from '@walletconnect/sign-client';
 import type { SessionTypes } from '@walletconnect/types';
 import { ethers } from 'ethers';
+import { ENV } from './config';
 
 // WalletConnect Project ID from cloud.walletconnect.com
-const PROJECT_ID = '3a48a1389fee89b77191ca5754fc252d';
+const PROJECT_ID = ENV.WALLETCONNECT_PROJECT_ID;
 
 type SignResult = {
   signature: string;

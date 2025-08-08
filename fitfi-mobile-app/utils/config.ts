@@ -19,6 +19,10 @@ export const ENV = {
   API_URL: process.env.EXPO_PUBLIC_API_URL || DEFAULT_LAN_API,
   WS_URL: process.env.EXPO_PUBLIC_WS_URL || DEFAULT_LAN_WS,
 
+  // WalletConnect / Reown Cloud
+  WALLETCONNECT_PROJECT_ID:
+    process.env.EXPO_PUBLIC_WALLETCONNECT_PROJECT_ID || '',
+
   // Feature flags
   HEALTH_CONNECT_ENABLED:
     process.env.EXPO_PUBLIC_HEALTH_CONNECT_ENABLED === 'true',

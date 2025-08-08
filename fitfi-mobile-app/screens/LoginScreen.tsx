@@ -26,9 +26,7 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [nonce, setNonce] = useState<number | null>(null);
-  const [otp, setOtp] = useState<string>('');
-  const [txHash, setTxHash] = useState<string | null>(null);
-  const [step, setStep] = useState<'input' | 'processing' | 'otp'>('input');
+  const [step, setStep] = useState<'input' | 'processing'>('input');
 
   useEffect(() => {
     const checkExistingAuth = async () => {
@@ -62,29 +60,7 @@ export default function LoginScreen() {
       setLoading(true);
       setStep('processing');
 
-      console.log(
-        '📡 Step 1: Requesting OTP/signup status for wallet:',
-        walletAddress
-      );
-
-      // Step 1: Request OTP or detect existing user
-      const otpResp = await apiService.requestOtp(walletAddress);
-      if (!otpResp.success) {
-        Alert.alert('Error', otpResp.message || 'Failed to request OTP');
-        setStep('input');
-        return;
-      }
-
-      if (!otpResp.data?.exists) {
-        // New user flow: show OTP entry UI
-        setTxHash(otpResp.data?.txHash || null);
-        setStep('otp');
-        return;
-      }
-
-      // Existing user: fall back to signature flow
-      console.log('👤 Existing user detected. Proceeding with signature flow.');
-
+      console.log('📡 Step 1: Requesting nonce for wallet:', walletAddress);
       const nonceResp = await apiService.requestNonce(walletAddress);
       if (!nonceResp.success || !nonceResp.data?.nonce) {
         Alert.alert('Error', nonceResp.message || 'Failed to get nonce');
@@ -111,38 +87,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleVerifyOtp = async () => {
-    try {
-      if (!otp || otp.trim().length < 4) {
-        Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP.');
-        return;
-      }
-      setLoading(true);
-      const verifyResp = await apiService.verifyOtp(walletAddress, otp.trim());
-      if (!verifyResp.success || !verifyResp.data?.token) {
-        Alert.alert(
-          'Verification Failed',
-          verifyResp.message || 'Invalid or expired OTP'
-        );
-        setStep('input');
-        return;
-      }
-      const { token, walletAddress: w, nonce: n } = verifyResp.data;
-      await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('walletAddress', w);
-      apiService.setAuthToken(token);
-      setNonce(n);
-      Alert.alert('Success', 'Signed up and logged in!', [
-        { text: 'OK', onPress: () => router.replace('/(tabs)/home') },
-      ]);
-    } catch (e) {
-      console.error('OTP verify error', e);
-      Alert.alert('Error', 'Failed to verify OTP.');
-      setStep('input');
-    } finally {
-      setLoading(false);
-    }
-  };
+  // OTP flow removed
 
   const handleWebWalletSigning = async (
     message: string,
@@ -451,47 +396,6 @@ export default function LoginScreen() {
 
       {step === 'input' && renderInputStep()}
       {step === 'processing' && renderProcessingStep()}
-      {step === 'otp' && (
-        <View style={styles.stepContainer}>
-          <Text style={styles.stepTitle}>Enter OTP</Text>
-          <Text style={styles.stepDescription}>
-            An OTP was issued via an on-chain event to your wallet. Enter the
-            6-digit code shown in the wallet/app.
-          </Text>
-          {txHash && (
-            <View style={styles.infoContainer}>
-              <Text style={styles.infoLabel}>Transaction:</Text>
-              <Text style={styles.infoValue}>{txHash}</Text>
-            </View>
-          )}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>OTP Code</Text>
-            <TextInput
-              style={styles.textInput}
-              value={otp}
-              onChangeText={setOtp}
-              placeholder='Enter 6-digit code'
-              placeholderTextColor='#9ca3af'
-              keyboardType='number-pad'
-              autoCapitalize='none'
-            />
-          </View>
-          <TouchableOpacity
-            style={[styles.primaryButton, loading && styles.disabledButton]}
-            onPress={handleVerifyOtp}
-            disabled={loading || !otp}
-          >
-            {loading ? (
-              <ActivityIndicator color='#ffffff' />
-            ) : (
-              <Text style={styles.primaryButtonText}>Verify OTP</Text>
-            )}
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.backButton} onPress={handleReset}>
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-        </View>
-      )}
     </ScrollView>
   );
 }

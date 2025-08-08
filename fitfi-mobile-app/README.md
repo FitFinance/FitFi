@@ -48,3 +48,12 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Android wallet deep-link queries
+
+This app includes a config plugin `./plugins/add-android-queries.js` that injects Android 11+ package visibility `<queries>` for wallet schemes (metamask, trust, rainbow, zerion). This improves `Linking.canOpenURL()` reliability for wallet deep links.
+
+Notes:
+
+- The plugin runs during native build steps like `expo prebuild` or `expo run:android`.
+- If you had prebuilt before adding the plugin, run `expo prebuild --clean` to re-generate native files.
