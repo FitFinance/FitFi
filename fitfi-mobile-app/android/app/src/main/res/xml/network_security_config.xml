@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Development: allow cleartext traffic globally (HTTP) -->
+    <!-- NOTE: Restrict or disable for production releases -->
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system"/>
+        </trust-anchors>
+    </base-config>
+
+    <!-- Optional: keep a domain-config for common local hosts -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Correct local IPs/hosts used during development -->
+        <domain includeSubdomains="true">192.168.29.122</domain>
+        <domain includeSubdomains="true">localhost</domain>
+        <domain includeSubdomains="true">10.0.2.2</domain>
+        <domain includeSubdomains="true">127.0.0.1</domain>
+    </domain-config>
+</network-security-config>

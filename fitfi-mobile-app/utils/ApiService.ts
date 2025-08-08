@@ -96,11 +96,23 @@ class ApiService {
       }
 
       console.log(`📡 API Request: ${options.method || 'GET'} ${url}`);
+      console.log(`📡 Headers:`, headers);
+      if (options.body) {
+        console.log(`📡 Body:`, options.body);
+      }
 
       const response = await fetch(url, {
         ...options,
         headers,
       });
+
+      console.log(
+        `📡 Response Status: ${response.status} ${response.statusText}`
+      );
+      console.log(
+        `📡 Response Headers:`,
+        Object.fromEntries(response.headers.entries())
+      );
 
       // Check if response is JSON
       const contentType = response.headers.get('content-type');
@@ -121,7 +133,7 @@ class ApiService {
 
         return {
           success: false,
-          message: `Server error (${response.status}): Expected JSON response but got ${contentType}`,
+          message: `Server error (${response.status}): Expected JSON response but got ${contentType}. Response: ${text.substring(0, 100)}...`,
           error: 'INVALID_RESPONSE',
         };
       }
@@ -145,9 +157,19 @@ class ApiService {
       };
     } catch (error) {
       console.error('❌ Network Error:', error);
+
+      // Provide more specific error messages
+      let errorMessage = 'Network error occurred';
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage =
+          'Cannot connect to server. Check your internet connection and server status.';
+      } else if (error instanceof Error) {
+        errorMessage = `Network error: ${error.message}`;
+      }
+
       return {
         success: false,
-        message: 'Network error occurred',
+        message: errorMessage,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
@@ -163,10 +185,36 @@ class ApiService {
     });
   }
 
+  // OTP signup flow
+  async requestOtp(
+    walletAddress: string
+  ): Promise<
+    ApiResponse<{ exists: boolean; otpId?: number; txHash?: string }>
+  > {
+    return this.makeRequest('/auth/request-otp', {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress }),
+    });
+  }
+
+  async verifyOtp(
+    walletAddress: string,
+    otp: string
+  ): Promise<
+    ApiResponse<{ token: string; walletAddress: string; nonce: number }>
+  > {
+    return this.makeRequest('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress, otp }),
+    });
+  }
+
   async verifyAndLogin(
     walletAddress: string,
     signature: string,
-    nonce: number
+    nonce: number,
+    signMethod?: 'personal_sign' | 'eth_signTypedData_v4' | 'eth_sign',
+    chainId?: string
   ): Promise<
     ApiResponse<{
       token: string;
@@ -176,7 +224,13 @@ class ApiService {
   > {
     return this.makeRequest('/auth/verify-and-login', {
       method: 'POST',
-      body: JSON.stringify({ walletAddress, signature, nonce }),
+      body: JSON.stringify({
+        walletAddress,
+        signature,
+        nonce,
+        signMethod,
+        chainId,
+      }),
     });
   }
 

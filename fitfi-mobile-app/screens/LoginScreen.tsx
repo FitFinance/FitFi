@@ -1,20 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
   Alert,
   ScrollView,
+  StyleSheet,
+  Text,
   TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useThemeStyles } from '../contexts/ThemeContext';
 import { apiService } from '../utils/ApiService';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ENV } from '../utils/config';
+import { NetworkDiagnostics } from '../utils/NetworkDiagnostics';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -25,7 +26,9 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
   const [nonce, setNonce] = useState<number | null>(null);
-  const [step, setStep] = useState<'input' | 'processing'>('input');
+  const [otp, setOtp] = useState<string>('');
+  const [txHash, setTxHash] = useState<string | null>(null);
+  const [step, setStep] = useState<'input' | 'processing' | 'otp'>('input');
 
   useEffect(() => {
     const checkExistingAuth = async () => {
@@ -59,46 +62,82 @@ export default function LoginScreen() {
       setLoading(true);
       setStep('processing');
 
-      console.log('📡 Step 1: Requesting nonce for wallet:', walletAddress);
+      console.log(
+        '📡 Step 1: Requesting OTP/signup status for wallet:',
+        walletAddress
+      );
 
-      // Step 1: Request nonce from backend
-      const response = await apiService.requestNonce(walletAddress);
-
-      if (!response.success) {
-        Alert.alert(
-          'Error',
-          response.message || 'Failed to get nonce from server'
-        );
+      // Step 1: Request OTP or detect existing user
+      const otpResp = await apiService.requestOtp(walletAddress);
+      if (!otpResp.success) {
+        Alert.alert('Error', otpResp.message || 'Failed to request OTP');
         setStep('input');
         return;
       }
 
-      const receivedNonce = response.data?.nonce;
-      if (!receivedNonce) {
-        Alert.alert('Error', 'No nonce received from server');
-        setStep('input');
+      if (!otpResp.data?.exists) {
+        // New user flow: show OTP entry UI
+        setTxHash(otpResp.data?.txHash || null);
+        setStep('otp');
         return;
       }
 
+      // Existing user: fall back to signature flow
+      console.log('👤 Existing user detected. Proceeding with signature flow.');
+
+      const nonceResp = await apiService.requestNonce(walletAddress);
+      if (!nonceResp.success || !nonceResp.data?.nonce) {
+        Alert.alert('Error', nonceResp.message || 'Failed to get nonce');
+        setStep('input');
+        return;
+      }
+      const receivedNonce = nonceResp.data.nonce;
       setNonce(receivedNonce);
-      console.log('✅ Step 1 Complete: Received nonce:', receivedNonce);
 
-      // Step 2: Create the message that needs to be signed
       const message = `Welcome to FitFi!\n\nSign this message to verify your identity.\n\nNonce: ${receivedNonce}`;
+      console.log('📝 Message to sign:', message);
 
-      console.log('📝 Step 2: Message to sign:', message);
-
-      // Step 3: Check if we're in a web environment with MetaMask
       if (typeof window !== 'undefined' && (window as any).ethereum) {
-        // Web environment - use MetaMask directly
         await handleWebWalletSigning(message, receivedNonce);
       } else {
-        // Mobile environment - use WalletConnect directly
         await handleWalletConnectSigning(message, receivedNonce);
       }
     } catch (error) {
       console.error('❌ Wallet connection error:', error);
       Alert.alert('Error', 'Failed to connect wallet. Please try again.');
+      setStep('input');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    try {
+      if (!otp || otp.trim().length < 4) {
+        Alert.alert('Invalid OTP', 'Please enter the 6-digit OTP.');
+        return;
+      }
+      setLoading(true);
+      const verifyResp = await apiService.verifyOtp(walletAddress, otp.trim());
+      if (!verifyResp.success || !verifyResp.data?.token) {
+        Alert.alert(
+          'Verification Failed',
+          verifyResp.message || 'Invalid or expired OTP'
+        );
+        setStep('input');
+        return;
+      }
+      const { token, walletAddress: w, nonce: n } = verifyResp.data;
+      await AsyncStorage.setItem('userToken', token);
+      await AsyncStorage.setItem('walletAddress', w);
+      apiService.setAuthToken(token);
+      setNonce(n);
+      Alert.alert('Success', 'Signed up and logged in!', [
+        { text: 'OK', onPress: () => router.replace('/(tabs)/home') },
+      ]);
+    } catch (e) {
+      console.error('OTP verify error', e);
+      Alert.alert('Error', 'Failed to verify OTP.');
       setStep('input');
     } finally {
       setLoading(false);
@@ -140,8 +179,22 @@ export default function LoginScreen() {
 
       console.log('✅ Web: Got signature from MetaMask');
 
+      // Determine chain id (optional)
+      let chainIdStr: string | undefined;
+      try {
+        const chainHex = await ethereum.request({ method: 'eth_chainId' });
+        const chainDec = parseInt(chainHex, 16);
+        if (!isNaN(chainDec)) chainIdStr = `eip155:${chainDec}`;
+      } catch {}
+
       // Step 3: Verify with backend
-      await verifySignatureWithBackend(connectedAddress, signature, nonceValue);
+      await verifySignatureWithBackend(
+        connectedAddress,
+        signature,
+        nonceValue,
+        'personal_sign',
+        chainIdStr
+      );
     } catch (error: any) {
       console.error('❌ Web wallet signing error:', error);
 
@@ -156,56 +209,6 @@ export default function LoginScreen() {
       }
 
       setStep('input');
-      throw error;
-    }
-  };
-
-  const verifySignatureWithBackend = async (
-    address: string,
-    signature: string,
-    nonceValue: number
-  ) => {
-    try {
-      console.log('🔐 Step 3: Verifying signature with backend...');
-
-      const response = await apiService.verifyAndLogin(
-        address,
-        signature,
-        nonceValue
-      );
-
-      if (!response.success) {
-        Alert.alert(
-          'Login Failed',
-          response.message || 'Failed to verify signature'
-        );
-        return;
-      }
-
-      const { token } = response.data || {};
-      if (!token) {
-        Alert.alert('Error', 'No authentication token received');
-        return;
-      }
-
-      // Store auth data
-      await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('walletAddress', address);
-
-      // Set token in API service
-      apiService.setAuthToken(token);
-
-      console.log('✅ Step 3 Complete: Login successful!');
-
-      Alert.alert('Success! 🎉', 'Successfully logged in with your wallet!', [
-        {
-          text: 'Continue to App',
-          onPress: () => router.replace('/(tabs)/home'),
-        },
-      ]);
-    } catch (error) {
-      console.error('❌ Backend verification error:', error);
-      Alert.alert('Error', 'Failed to verify login. Please try again.');
       throw error;
     }
   };
@@ -234,10 +237,17 @@ export default function LoginScreen() {
       }
 
       const receivedNonce = nonceResponse.data?.nonce;
+      if (!receivedNonce) {
+        Alert.alert('Error', 'No nonce received from server');
+        setStep('input');
+        return;
+      }
       setNonce(receivedNonce);
 
       // Create demo signature
-      const demoSignature = `0x${'mock'.repeat(16)}${receivedNonce.toString().padStart(8, '0')}`;
+      const demoSignature = `0x${'mock'.repeat(16)}${receivedNonce
+        .toString()
+        .padStart(8, '0')}`;
 
       console.log('🔐 Demo: Verifying with mock signature...');
 
@@ -250,6 +260,31 @@ export default function LoginScreen() {
       console.error('❌ Demo login error:', error);
       Alert.alert('Error', 'Demo login failed. Please try again.');
       setStep('input');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleNetworkTest = async () => {
+    try {
+      setLoading(true);
+      Alert.alert(
+        'Network Test',
+        'Running network diagnostics... Check console for detailed results.'
+      );
+
+      const results = await NetworkDiagnostics.runFullDiagnostics();
+
+      const summary = results
+        .map((r) => `${r.success ? '✅' : '❌'} ${r.test}: ${r.message}`)
+        .join('\n');
+
+      Alert.alert('Network Test Results', summary, [
+        { text: 'OK', style: 'default' },
+      ]);
+    } catch (error) {
+      console.error('Network test error:', error);
+      Alert.alert('Error', 'Network test failed. Check console for details.');
     } finally {
       setLoading(false);
     }
@@ -274,12 +309,30 @@ export default function LoginScreen() {
       );
 
       // Connect to wallet and sign message directly
-      const signature = await WalletConnectService.connectAndSign(message);
+      const { signature, address, method, chainId } =
+        await WalletConnectService.connectAndSign(message, nonceValue);
 
       console.log('✅ Mobile: Got signature from WalletConnect');
 
-      // Verify with backend
-      await verifySignatureWithBackend(walletAddress, signature, nonceValue);
+      // If user typed an address, ensure it matches the connected wallet
+      if (
+        walletAddress &&
+        walletAddress.toLowerCase() !== address.toLowerCase()
+      ) {
+        Alert.alert(
+          'Address Mismatch',
+          `Connected wallet (${address}) doesn't match entered address (${walletAddress}). Using connected wallet.`
+        );
+      }
+
+      // Verify with backend using the connected address
+      await verifySignatureWithBackend(
+        address,
+        signature,
+        nonceValue,
+        method,
+        chainId
+      );
     } catch (error: any) {
       console.error('❌ WalletConnect signing error:', error);
 
@@ -332,13 +385,23 @@ export default function LoginScreen() {
       </TouchableOpacity>
 
       {ENV.IS_DEV && (
-        <TouchableOpacity
-          style={styles.demoButton}
-          onPress={handleDemoLogin}
-          disabled={loading}
-        >
-          <Text style={styles.demoButtonText}>Demo Login (Dev Only)</Text>
-        </TouchableOpacity>
+        <>
+          <TouchableOpacity
+            style={styles.demoButton}
+            onPress={handleDemoLogin}
+            disabled={loading}
+          >
+            <Text style={styles.demoButtonText}>Demo Login (Dev Only)</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.demoButton, { backgroundColor: '#ef4444' }]}
+            onPress={handleNetworkTest}
+            disabled={loading}
+          >
+            <Text style={styles.demoButtonText}>🔧 Network Test</Text>
+          </TouchableOpacity>
+        </>
       )}
     </View>
   );
@@ -349,7 +412,7 @@ export default function LoginScreen() {
       <Text style={styles.stepDescription}>
         {typeof window !== 'undefined' && (window as any).ethereum
           ? 'MetaMask will open automatically. Please sign the message to authenticate.'
-          : 'Choose how you want to sign the authentication message. For mobile users, WalletConnect is recommended but not yet implemented.'}
+          : 'A wallet app will open via WalletConnect. Approve the connection and sign the message to authenticate.'}
       </Text>
 
       <View style={styles.infoContainer}>
@@ -388,6 +451,47 @@ export default function LoginScreen() {
 
       {step === 'input' && renderInputStep()}
       {step === 'processing' && renderProcessingStep()}
+      {step === 'otp' && (
+        <View style={styles.stepContainer}>
+          <Text style={styles.stepTitle}>Enter OTP</Text>
+          <Text style={styles.stepDescription}>
+            An OTP was issued via an on-chain event to your wallet. Enter the
+            6-digit code shown in the wallet/app.
+          </Text>
+          {txHash && (
+            <View style={styles.infoContainer}>
+              <Text style={styles.infoLabel}>Transaction:</Text>
+              <Text style={styles.infoValue}>{txHash}</Text>
+            </View>
+          )}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>OTP Code</Text>
+            <TextInput
+              style={styles.textInput}
+              value={otp}
+              onChangeText={setOtp}
+              placeholder='Enter 6-digit code'
+              placeholderTextColor='#9ca3af'
+              keyboardType='number-pad'
+              autoCapitalize='none'
+            />
+          </View>
+          <TouchableOpacity
+            style={[styles.primaryButton, loading && styles.disabledButton]}
+            onPress={handleVerifyOtp}
+            disabled={loading || !otp}
+          >
+            {loading ? (
+              <ActivityIndicator color='#ffffff' />
+            ) : (
+              <Text style={styles.primaryButtonText}>Verify OTP</Text>
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.backButton} onPress={handleReset}>
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </ScrollView>
   );
 }

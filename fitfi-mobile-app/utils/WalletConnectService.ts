@@ -1,220 +1,311 @@
 import { Alert, Linking } from 'react-native';
+import SignClient from '@walletconnect/sign-client';
+import type { SessionTypes } from '@walletconnect/types';
+import { ethers } from 'ethers';
 
-// Your WalletConnect Project ID from cloud.walletconnect.com
+// WalletConnect Project ID from cloud.walletconnect.com
 const PROJECT_ID = '3a48a1389fee89b77191ca5754fc252d';
 
-export class WalletConnectService {
-  static async connectAndSign(message: string): Promise<string> {
-    return new Promise((resolve, reject) => {
-      try {
-        // For Android, we'll create a simplified WalletConnect flow
-        // In production builds, this will work with actual wallet apps
+type SignResult = {
+  signature: string;
+  address: string;
+  method: 'personal_sign' | 'eth_signTypedData_v4' | 'eth_sign';
+  chainId: string; // e.g., 'eip155:1'
+};
 
-        Alert.alert(
-          'Connect Wallet',
-          'Choose how you want to connect your wallet to sign the message for authentication.',
-          [
-            {
-              text: 'Cancel',
-              style: 'cancel',
-              onPress: () =>
-                reject(new Error('User cancelled wallet connection')),
-            },
-            {
-              text: 'MetaMask Mobile',
-              onPress: () =>
-                this.connectMetaMaskMobile(message, resolve, reject),
-            },
-            {
-              text: 'Trust Wallet',
-              onPress: () => this.connectTrustWallet(message, resolve, reject),
-            },
-            {
-              text: 'WalletConnect QR',
-              onPress: () =>
-                this.connectWalletConnectQR(message, resolve, reject),
-            },
-          ]
-        );
-      } catch (error) {
-        console.error('❌ WalletConnect initialization error:', error);
-        reject(new Error('Failed to initialize wallet connection'));
+export class WalletConnectService {
+  private static client: SignClient | null = null;
+  private static session: SessionTypes.Struct | null = null;
+  private static lastWalletReopenUrl: string | null = null; // e.g., 'metamask://' or universal link
+
+  static async connectAndSign(
+    message: string,
+    nonce: number
+  ): Promise<SignResult> {
+    try {
+      await this.ensureClient();
+
+      // If we already have a session, reuse it
+      if (!this.session) {
+        const requiredNamespaces = {
+          eip155: {
+            methods: [
+              'personal_sign',
+              'eth_sign',
+              'eth_signTypedData',
+              'eth_signTypedData_v4',
+            ],
+            chains: ['eip155:1', 'eip155:137'], // Ethereum + Polygon
+            events: ['accountsChanged', 'chainChanged'],
+          },
+        } as const;
+
+        const { uri, approval } = await this.client!.connect({
+          requiredNamespaces,
+        });
+
+        if (uri) {
+          // Prompt user to choose a wallet and deep link with the wc uri
+          await this.openWalletChoice(uri);
+        }
+
+        this.session = await approval();
       }
+
+      // Extract address and a valid chainId from session
+      const ns = this.session!.namespaces;
+      const eipNs = ns.eip155;
+      const account = eipNs.accounts[0]; // format: eip155:1:0xabc...
+      const [namespace, chain, address] = account.split(':');
+      const chainId = `${namespace}:${chain}`;
+      const chainIdNum = parseInt(chain, 10) || 1;
+
+      // Foreground the wallet so user sees the request UI
+      if (this.lastWalletReopenUrl) {
+        try {
+          await Linking.openURL(this.lastWalletReopenUrl);
+        } catch {}
+      }
+
+      let signature: string;
+      let method: SignResult['method'] = 'personal_sign';
+      const hexMsg = ethers.hexlify(ethers.toUtf8Bytes(message));
+      try {
+        // Try personal_sign first
+        signature = (await this.client!.request({
+          topic: this.session!.topic,
+          chainId,
+          request: {
+            method: 'personal_sign',
+            // Many wallets expect 0x-hex for personal_sign
+            params: [hexMsg, address],
+          },
+        })) as string;
+        method = 'personal_sign';
+      } catch (e) {
+        // Next fallback: EIP-712 typed data (many wallets prefer this)
+        try {
+          const domain = {
+            name: 'FitFi',
+            version: '1',
+            chainId: chainIdNum,
+          } as const;
+          const types = {
+            EIP712Domain: [
+              { name: 'name', type: 'string' },
+              { name: 'version', type: 'string' },
+              { name: 'chainId', type: 'uint256' },
+            ],
+            FitFiLogin: [
+              { name: 'statement', type: 'string' },
+              { name: 'wallet', type: 'address' },
+              { name: 'nonce', type: 'uint256' },
+            ],
+          } as const;
+          const messageTyped = {
+            statement: 'Sign in to FitFi',
+            wallet: address,
+            nonce: BigInt(nonce),
+          } as const;
+          const typedData = {
+            types,
+            domain,
+            primaryType: 'FitFiLogin',
+            message: messageTyped,
+          } as const;
+
+          if (this.lastWalletReopenUrl) {
+            try {
+              await Linking.openURL(this.lastWalletReopenUrl);
+            } catch {}
+          }
+          signature = (await this.client!.request({
+            topic: this.session!.topic,
+            chainId,
+            request: {
+              method: 'eth_signTypedData_v4',
+              // MetaMask expects [address, JSON-stringified typed data]
+              params: [address, JSON.stringify(typedData)],
+            },
+          })) as string;
+          method = 'eth_signTypedData_v4';
+        } catch (e2) {
+          // Final fallback: eth_sign
+          if (this.lastWalletReopenUrl) {
+            try {
+              await Linking.openURL(this.lastWalletReopenUrl);
+            } catch {}
+          }
+          signature = (await this.client!.request({
+            topic: this.session!.topic,
+            chainId,
+            request: {
+              method: 'eth_sign',
+              // eth_sign strictly requires [address, 0x-hex-message]
+              params: [address, hexMsg],
+            },
+          })) as string;
+          method = 'eth_sign';
+        }
+      }
+
+      return { signature, address, method, chainId };
+    } catch (error: any) {
+      console.error('❌ WalletConnect signing failed:', error);
+      throw new Error(
+        error?.message || 'Failed to connect wallet and sign the message'
+      );
+    }
+  }
+
+  private static async ensureClient() {
+    if (this.client) return;
+    this.client = await SignClient.init({
+      projectId: PROJECT_ID,
+      metadata: {
+        name: 'FitFi',
+        description: 'FitFi Mobile App',
+        url: 'https://fitfi.app',
+        icons: [
+          'https://raw.githubusercontent.com/FitFinance/FitFi/main/logo.png',
+        ],
+      },
     });
   }
 
-  private static async connectMetaMaskMobile(
-    message: string,
-    resolve: (signature: string) => void,
-    reject: (error: Error) => void
-  ) {
-    try {
-      // Create WalletConnect URI for MetaMask Mobile
-      const wcUri = this.generateWalletConnectURI();
-      const metamaskDeepLink = `metamask://wc?uri=${encodeURIComponent(wcUri)}`;
+  private static async openWalletChoice(uri: string) {
+    return new Promise<void>((resolve, reject) => {
+      const deepLinks = {
+        metamask: {
+          scheme: `metamask://wc?uri=${encodeURIComponent(uri)}`,
+          universal: `https://metamask.app.link/wc?uri=${encodeURIComponent(
+            uri
+          )}`,
+          store: 'https://play.google.com/store/apps/details?id=io.metamask',
+          reopen: 'metamask://',
+        },
+        trust: {
+          scheme: `trust://wc?uri=${encodeURIComponent(uri)}`,
+          universal: `https://link.trustwallet.com/wc?uri=${encodeURIComponent(
+            uri
+          )}`,
+          store:
+            'https://play.google.com/store/apps/details?id=com.wallet.crypto.trustapp',
+          reopen: 'trust://',
+        },
+        rainbow: {
+          scheme: `rainbow://wc?uri=${encodeURIComponent(uri)}`,
+          universal: `https://rnbwapp.com/wc?uri=${encodeURIComponent(uri)}`,
+          store: 'https://play.google.com/store/apps/details?id=me.rainbow',
+          reopen: 'rainbow://',
+        },
+        zerion: {
+          scheme: `zerion://wc?uri=${encodeURIComponent(uri)}`,
+          universal: `https://wallet.zerion.io/wc?uri=${encodeURIComponent(
+            uri
+          )}`,
+          store:
+            'https://play.google.com/store/apps/details?id=io.zerion.android',
+          reopen: 'zerion://',
+        },
+      } as const;
 
       Alert.alert(
-        'Opening MetaMask',
-        'This will open MetaMask mobile app to sign your message.',
+        'Connect Wallet',
+        'Choose a wallet to approve the connection and sign.',
         [
           {
             text: 'Cancel',
+            style: 'cancel',
             onPress: () =>
-              reject(new Error('User cancelled MetaMask connection')),
+              reject(new Error('User cancelled wallet connection')),
           },
           {
-            text: 'Open MetaMask',
+            text: 'MetaMask',
             onPress: async () => {
-              try {
-                const canOpen = await Linking.canOpenURL(metamaskDeepLink);
-                if (canOpen) {
-                  await Linking.openURL(metamaskDeepLink);
-                  // Simulate successful signing for now
-                  setTimeout(() => {
-                    const signature = `0x${'metamask'.repeat(15)}${Date.now().toString(16)}`;
-                    console.log('✅ MetaMask signature simulated');
-                    resolve(signature);
-                  }, 3000);
-                } else {
-                  Alert.alert(
-                    'MetaMask Not Found',
-                    'Please install MetaMask mobile app from the Play Store.',
-                    [
-                      {
-                        text: 'Install MetaMask',
-                        onPress: () =>
-                          Linking.openURL(
-                            'https://play.google.com/store/apps/details?id=io.metamask'
-                          ),
-                      },
-                      {
-                        text: 'Cancel',
-                        onPress: () =>
-                          reject(new Error('MetaMask not installed')),
-                      },
-                    ]
-                  );
-                }
-              } catch (error) {
-                console.error('❌ MetaMask linking error:', error);
-                reject(new Error('Failed to open MetaMask'));
-              }
+              this.lastWalletReopenUrl = deepLinks.metamask.reopen;
+              await this.openDeepLinkOrStore(deepLinks.metamask).catch(reject);
+              resolve();
+            },
+          },
+          {
+            text: 'Trust Wallet',
+            onPress: async () => {
+              this.lastWalletReopenUrl = deepLinks.trust.reopen;
+              await this.openDeepLinkOrStore(deepLinks.trust).catch(reject);
+              resolve();
+            },
+          },
+          {
+            text: 'Rainbow',
+            onPress: async () => {
+              this.lastWalletReopenUrl = deepLinks.rainbow.reopen;
+              await this.openDeepLinkOrStore(deepLinks.rainbow).catch(reject);
+              resolve();
             },
           },
         ]
       );
-    } catch (error) {
-      console.error('❌ MetaMask connection error:', error);
-      reject(new Error('MetaMask connection failed'));
-    }
+    });
   }
 
-  private static async connectTrustWallet(
-    message: string,
-    resolve: (signature: string) => void,
-    reject: (error: Error) => void
-  ) {
-    try {
-      const wcUri = this.generateWalletConnectURI();
-      const trustWalletDeepLink = `trust://wc?uri=${encodeURIComponent(wcUri)}`;
+  private static async openDeepLinkOrStore(opts: {
+    scheme: string;
+    universal: string;
+    store: string;
+  }) {
+    const tryOpen = async (url: string) => {
+      const can = await Linking.canOpenURL(url);
+      if (can) {
+        await Linking.openURL(url);
+        return true;
+      }
+      return false;
+    };
 
-      Alert.alert(
-        'Opening Trust Wallet',
-        'This will open Trust Wallet app to sign your message.',
-        [
-          {
-            text: 'Cancel',
-            onPress: () =>
-              reject(new Error('User cancelled Trust Wallet connection')),
-          },
-          {
-            text: 'Open Trust Wallet',
-            onPress: async () => {
-              try {
-                const canOpen = await Linking.canOpenURL(trustWalletDeepLink);
-                if (canOpen) {
-                  await Linking.openURL(trustWalletDeepLink);
-                  // Simulate successful signing
-                  setTimeout(() => {
-                    const signature = `0x${'trustwallet'.repeat(12)}${Date.now().toString(16)}`;
-                    console.log('✅ Trust Wallet signature simulated');
-                    resolve(signature);
-                  }, 3000);
-                } else {
-                  Alert.alert(
-                    'Trust Wallet Not Found',
-                    'Please install Trust Wallet from the Play Store.',
-                    [
-                      {
-                        text: 'Install Trust Wallet',
-                        onPress: () =>
-                          Linking.openURL(
-                            'https://play.google.com/store/apps/details?id=com.wallet.crypto.trustapp'
-                          ),
-                      },
-                      {
-                        text: 'Cancel',
-                        onPress: () =>
-                          reject(new Error('Trust Wallet not installed')),
-                      },
-                    ]
-                  );
-                }
-              } catch (error) {
-                console.error('❌ Trust Wallet linking error:', error);
-                reject(new Error('Failed to open Trust Wallet'));
-              }
-            },
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('❌ Trust Wallet connection error:', error);
-      reject(new Error('Trust Wallet connection failed'));
-    }
-  }
+    if (await tryOpen(opts.scheme)) return;
+    if (await tryOpen(opts.universal)) return;
 
-  private static async connectWalletConnectQR(
-    message: string,
-    resolve: (signature: string) => void,
-    reject: (error: Error) => void
-  ) {
-    // For now, show instructions for implementing real WalletConnect QR
     Alert.alert(
-      'WalletConnect QR Code',
-      `Real WalletConnect QR integration requires:\n\n1. ✅ Project ID: ${PROJECT_ID.substring(0, 8)}...\n2. QR Code generation library\n3. Session management\n4. Message signing protocol\n\nFor development, using mock signature.`,
+      'Wallet Not Found',
+      'Redirecting to the Play Store to install the wallet.',
       [
         {
-          text: 'Cancel',
-          onPress: () => reject(new Error('User cancelled QR connection')),
+          text: 'Open Store',
+          onPress: () => Linking.openURL(opts.store),
         },
-        {
-          text: 'Generate Mock Signature',
-          onPress: () => {
-            const signature = `0x${'walletconnect'.repeat(10)}${Date.now().toString(16)}`;
-            console.log('✅ WalletConnect QR signature simulated');
-            resolve(signature);
-          },
-        },
+        { text: 'Cancel', style: 'cancel' },
       ]
     );
-  }
-
-  private static generateWalletConnectURI(): string {
-    // Generate a mock WalletConnect URI with your project ID
-    // In a real implementation, this would be generated by the WalletConnect SDK
-    return `wc:${Math.random().toString(36).substring(2)}@2?relay-protocol=irn&symKey=${Math.random().toString(36).substring(2)}`;
+    throw new Error('Wallet app not installed');
   }
 
   static async disconnect() {
-    console.log('🔌 WalletConnect disconnected');
+    try {
+      if (this.client && this.session) {
+        await this.client.disconnect({
+          topic: this.session.topic,
+          reason: { code: 6000, message: 'User disconnected' },
+        });
+      }
+    } catch (e) {
+      // best-effort
+    } finally {
+      this.session = null;
+    }
   }
 
   static isConnected(): boolean {
-    return false;
+    return !!this.session;
   }
 
   static getConnectedAddress(): string | null {
-    return null;
+    try {
+      const account = this.session?.namespaces?.eip155?.accounts?.[0];
+      if (!account) return null;
+      return account.split(':')[2] || null;
+    } catch {
+      return null;
+    }
   }
 }

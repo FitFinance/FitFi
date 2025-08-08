@@ -13,6 +13,7 @@ import { useTheme, useThemeStyles } from '../contexts/ThemeContext';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { apiService } from '../utils/ApiService';
+import NetworkTestScreen from './NetworkTestScreen';
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
@@ -21,6 +22,7 @@ export default function SettingsScreen() {
   const [notifications, setNotifications] = useState(true);
   const [autoJoinDuels, setAutoJoinDuels] = useState(false);
   const [shareActivity, setShareActivity] = useState(true);
+  const [showNetworkTest, setShowNetworkTest] = useState(false);
 
   // Theme-aware styles
   const styles = useThemeStyles(lightStyles, darkStyles);
