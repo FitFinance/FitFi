@@ -5,11 +5,12 @@ declare global {
   interface IUser extends Document {
     walletAddress: string;
     nonce: number;
+    name?: string;
     createdAt: Date;
+    lastLogin?: Date;
     username?: string;
     email?: string;
     isActive?: boolean;
-    lastLogin?: Date;
     role: 'user' | 'admin';
   }
 

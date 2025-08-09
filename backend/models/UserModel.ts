@@ -13,15 +13,21 @@ const userSchema: Schema<IUser> = new mongoose.Schema({
     required: true,
     default: () => Math.floor(Math.random() * 1000000),
   },
+  name: {
+    type: String,
+    required: false,
+    default: 'Anonymous',
+    maxlength: 50,
+    trim: true,
+  },
   createdAt: {
     type: Date,
     default: Date.now,
   },
-  // username: {
-  //   type: String,
-  //   required: false,
-  //   unique: false, // walletAddress is already unique so no need to make this uique
-  // },
+  lastLogin: {
+    type: Date,
+    default: Date.now,
+  },
   role: {
     type: String,
     enum: ['user', 'admin'],

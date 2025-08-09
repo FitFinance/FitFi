@@ -6,7 +6,10 @@ import requestNonce from '../controllers/Auth/request-nonce.js';
 import requestOtp from '../controllers/Auth/request-otp.js';
 import verifyOtp from '../controllers/Auth/verify-otp.js';
 import walletAuth from '../controllers/Auth/wallet-auth.js';
+import updateProfile from '../controllers/Auth/update-profile.js';
+import getProfile from '../controllers/Auth/get-profile.js';
 import validateRequiredEnvVariables from '../middleware/validate-required-env-variables.js';
+import authenticate from '../middleware/authenticate.js';
 
 const AuthRoutes: Router = express.Router();
 
@@ -37,6 +40,12 @@ AuthRoutes.post(
   validateRequiredEnvVariables('JWT_SECRET', 'JWT_TTL'),
   walletAuth
 );
+
+// Protected routes (require authentication)
+AuthRoutes.use(authenticate); // All routes below this will require authentication
+
+AuthRoutes.get('/profile', getProfile);
+AuthRoutes.patch('/profile', updateProfile);
 
 AuthRoutes.all('{*any}', invalidRoute);
 

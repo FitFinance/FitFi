@@ -136,12 +136,15 @@ const walletAuth: fn = catchAsync(
       user = await User.create({
         walletAddress: walletAddress.toLowerCase(),
         nonce,
+        name: 'Anonymous',
+        lastLogin: new Date(),
       });
       isNewUser = true;
     } else {
-      // Update existing user's nonce
+      // Update existing user's nonce and last login
       console.log('✅ Existing user found for wallet:', walletAddress);
       user.nonce = generateNDigitRandomNumber(6);
+      user.lastLogin = new Date();
       await user.save();
     }
 
@@ -176,10 +179,15 @@ const walletAuth: fn = catchAsync(
       status: 'success',
       statusCode: 200,
       data: {
+        user: {
+          id: user._id,
+          walletAddress: user.walletAddress,
+          name: user.name || 'Anonymous',
+          role: user.role,
+          isNewUser: isNewUser,
+        },
         nonce: user.nonce,
-        walletAddress: user.walletAddress,
         token: token,
-        isNewUser: isNewUser,
       },
     };
 

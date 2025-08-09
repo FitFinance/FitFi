@@ -1,24 +1,27 @@
 import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
 export default function SplashScreen() {
   const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      // Simulate initialization and check for auth token
-      const hasToken = false; // Placeholder logic
-      if (hasToken) {
-        router.replace('/(tabs)/home');
-      } else {
-        router.replace('/login');
-      }
-    }, 2500);
+    // Wait for auth check to complete, then navigate
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        if (isAuthenticated) {
+          router.replace('/(tabs)/home');
+        } else {
+          router.replace('/login');
+        }
+      }, 1500); // Show splash for at least 1.5 seconds
 
-    return () => clearTimeout(timer);
-  }, [router]);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   return (
     <View style={[GlobalStyles.centered, styles.container]}>
@@ -32,7 +35,9 @@ export default function SplashScreen() {
       
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color={Colors.dark.primary} />
-        <Text style={styles.loadingText}>Loading...</Text>
+        <Text style={styles.loadingText}>
+          {isLoading ? 'Checking authentication...' : 'Loading...'}
+        </Text>
       </View>
       
       <View style={styles.footer}>

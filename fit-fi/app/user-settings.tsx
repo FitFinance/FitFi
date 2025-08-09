@@ -1,15 +1,18 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Alert, TextInput, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useAuth } from '@/contexts/AuthContext';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
 export default function UserSettingsScreen() {
   const router = useRouter();
+  const { user, updateProfile, logout } = useAuth();
+  const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const [editName, setEditName] = useState(user?.name || '');
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const mockUserProfile = {
-    name: 'Alex Fitness',
-    username: '@alexfitness',
-    walletAddress: '0x1234567890abcdef1234567890abcdef12345678',
+  // Mock data for now - in a real app, this would come from the backend
+  const mockStats = {
     level: 12,
     experience: 8450,
     nextLevelExp: 10000,
@@ -23,21 +26,57 @@ export default function UserSettingsScreen() {
     longestStreak: 15,
   };
 
-  const mockGoals = {
-    dailySteps: 10000,
-    weeklyDistance: 50, // km
-    monthlyCalories: 15000,
-    yearlyDuels: 100,
+  const handleEditProfile = () => {
+    setEditName(user?.name || '');
+    setIsEditModalVisible(true);
   };
 
-  const mockAchievements = [
-    { id: '1', title: 'Early Adopter', icon: '🏅', description: 'Joined in the first month' },
-    { id: '2', title: 'Step Master', icon: '👟', description: 'Walked 1M+ steps' },
-    { id: '3', title: 'Duel Champion', icon: '⚔️', description: 'Won 25+ duels' },
-    { id: '4', title: 'Streak Keeper', icon: '🔥', description: '7-day active streak' },
-  ];
+  const handleSaveProfile = async () => {
+    if (!editName.trim()) {
+      Alert.alert('Error', 'Please enter a valid name');
+      return;
+    }
 
-  const expProgress = (mockUserProfile.experience / mockUserProfile.nextLevelExp) * 100;
+    try {
+      setIsUpdating(true);
+      const response = await updateProfile(editName.trim());
+      
+      if (response.success) {
+        setIsEditModalVisible(false);
+        Alert.alert('Success', 'Profile updated successfully');
+      } else {
+        Alert.alert(
+          response.details?.title || 'Update Failed',
+          response.details?.description || response.message
+        );
+      }
+    } catch (error) {
+      console.error('Profile update error:', error);
+      Alert.alert('Error', 'Failed to update profile. Please try again.');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout? You will need to reconnect your wallet to access the app.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/login');
+          }
+        },
+      ]
+    );
+  };
+
+  const expProgress = (mockStats.experience / mockStats.nextLevelExp) * 100;
 
   const StatCard = ({ title, value, subtitle }: { title: string; value: string | number; subtitle?: string }) => (
     <View style={styles.statCard}>
@@ -46,23 +85,6 @@ export default function UserSettingsScreen() {
       {subtitle && <Text style={styles.statSubtitle}>{subtitle}</Text>}
     </View>
   );
-
-  const GoalCard = ({ title, current, target, unit }: { title: string; current: number; target: number; unit: string }) => {
-    const progress = (current / target) * 100;
-    return (
-      <View style={styles.goalCard}>
-        <Text style={styles.goalTitle}>{title}</Text>
-        <View style={styles.goalProgress}>
-          <View style={GlobalStyles.progressBar}>
-            <View style={[GlobalStyles.progressFill, { width: `${Math.min(progress, 100)}%` }]} />
-          </View>
-          <Text style={styles.goalText}>
-            {current.toLocaleString()} / {target.toLocaleString()} {unit} ({Math.round(progress)}%)
-          </Text>
-        </View>
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView style={GlobalStyles.safeArea}>
@@ -74,7 +96,12 @@ export default function UserSettingsScreen() {
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={GlobalStyles.title}>Profile</Text>
-        <View style={styles.placeholder} />
+        <TouchableOpacity
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContainer}>
@@ -82,20 +109,25 @@ export default function UserSettingsScreen() {
         <View style={styles.profileHeader}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>AF</Text>
+              <Text style={styles.avatarText}>
+                {user?.name ? user.name.charAt(0).toUpperCase() : 'U'}
+              </Text>
             </View>
             <View style={styles.levelBadge}>
-              <Text style={styles.levelText}>{mockUserProfile.level}</Text>
+              <Text style={styles.levelText}>{mockStats.level}</Text>
             </View>
           </View>
           
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{mockUserProfile.name}</Text>
-            <Text style={styles.profileUsername}>{mockUserProfile.username}</Text>
+            <Text style={styles.profileName}>{user?.name || 'Anonymous'}</Text>
+            <Text style={styles.profileRole}>Role: {user?.role || 'User'}</Text>
             <Text style={styles.profileAddress}>
-              {mockUserProfile.walletAddress.slice(0, 6)}...{mockUserProfile.walletAddress.slice(-4)}
+              {user?.walletAddress ? 
+                `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}` :
+                'No wallet connected'
+              }
             </Text>
-            <Text style={styles.joinedDate}>Joined {mockUserProfile.joinedDate}</Text>
+            <Text style={styles.joinedDate}>Joined {mockStats.joinedDate}</Text>
           </View>
 
           <View style={styles.experienceSection}>
@@ -105,9 +137,23 @@ export default function UserSettingsScreen() {
                 <View style={[GlobalStyles.progressFill, { width: `${expProgress}%` }]} />
               </View>
               <Text style={styles.experienceText}>
-                {mockUserProfile.experience.toLocaleString()} / {mockUserProfile.nextLevelExp.toLocaleString()} XP
+                {mockStats.experience.toLocaleString()} / {mockStats.nextLevelExp.toLocaleString()} XP
               </Text>
             </View>
+          </View>
+        </View>
+
+        {/* Wallet Info */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Wallet Information</Text>
+          <View style={styles.walletCard}>
+            <Text style={styles.walletLabel}>Connected Wallet:</Text>
+            <Text style={styles.walletAddress}>
+              {user?.walletAddress || 'No wallet connected'}
+            </Text>
+            <Text style={styles.walletNote}>
+              🦊 Authenticated via MetaMask
+            </Text>
           </View>
         </View>
 
@@ -117,86 +163,46 @@ export default function UserSettingsScreen() {
           <View style={styles.statsGrid}>
             <StatCard
               title="Total Steps"
-              value={mockUserProfile.totalSteps.toLocaleString()}
+              value={mockStats.totalSteps.toLocaleString()}
               subtitle="All time"
             />
             <StatCard
               title="Challenges"
-              value={mockUserProfile.totalChallenges}
+              value={mockStats.totalChallenges}
               subtitle="Completed"
             />
             <StatCard
               title="Win Rate"
-              value={`${mockUserProfile.winRate}%`}
-              subtitle={`${mockUserProfile.challengesWon}/${mockUserProfile.totalChallenges}`}
+              value={`${mockStats.winRate}%`}
+              subtitle={`${mockStats.challengesWon}/${mockStats.totalChallenges}`}
             />
             <StatCard
               title="Current Streak"
-              value={mockUserProfile.currentStreak}
+              value={mockStats.currentStreak}
               subtitle="days"
             />
             <StatCard
               title="Total Earnings"
-              value={`${mockUserProfile.totalEarnings} FF`}
+              value={`${mockStats.totalEarnings} FF`}
               subtitle="Lifetime"
             />
             <StatCard
               title="Longest Streak"
-              value={mockUserProfile.longestStreak}
+              value={mockStats.longestStreak}
               subtitle="days"
             />
-          </View>
-        </View>
-
-        {/* Goals */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Current Goals</Text>
-          <GoalCard
-            title="Daily Steps"
-            current={8420}
-            target={mockGoals.dailySteps}
-            unit="steps"
-          />
-          <GoalCard
-            title="Weekly Distance"
-            current={32.5}
-            target={mockGoals.weeklyDistance}
-            unit="km"
-          />
-          <GoalCard
-            title="Monthly Calories"
-            current={8900}
-            target={mockGoals.monthlyCalories}
-            unit="cal"
-          />
-          <GoalCard
-            title="Yearly Duels"
-            current={42}
-            target={mockGoals.yearlyDuels}
-            unit="duels"
-          />
-        </View>
-
-        {/* Achievements */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Achievements</Text>
-          <View style={styles.achievementsGrid}>
-            {mockAchievements.map((achievement) => (
-              <View key={achievement.id} style={styles.achievementCard}>
-                <Text style={styles.achievementIcon}>{achievement.icon}</Text>
-                <Text style={styles.achievementTitle}>{achievement.title}</Text>
-                <Text style={styles.achievementDescription}>{achievement.description}</Text>
-              </View>
-            ))}
           </View>
         </View>
 
         {/* Quick Actions */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionTitle}>Profile Actions</Text>
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={GlobalStyles.buttonSecondary}>
-              <Text style={GlobalStyles.buttonText}>Edit Profile</Text>
+            <TouchableOpacity 
+              style={GlobalStyles.button}
+              onPress={handleEditProfile}
+            >
+              <Text style={GlobalStyles.buttonTextPrimary}>Edit Profile</Text>
             </TouchableOpacity>
             <TouchableOpacity style={GlobalStyles.buttonSecondary}>
               <Text style={GlobalStyles.buttonText}>Update Goals</Text>
@@ -204,9 +210,62 @@ export default function UserSettingsScreen() {
             <TouchableOpacity style={GlobalStyles.buttonSecondary}>
               <Text style={GlobalStyles.buttonText}>Share Profile</Text>
             </TouchableOpacity>
+            <TouchableOpacity 
+              style={[GlobalStyles.buttonSecondary, { borderColor: Colors.dark.error, borderWidth: 1 }]}
+              onPress={handleLogout}
+            >
+              <Text style={[GlobalStyles.buttonText, { color: Colors.dark.error }]}>Disconnect Wallet</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+
+      {/* Edit Profile Modal */}
+      <Modal
+        visible={isEditModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setIsEditModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Edit Profile</Text>
+            
+            <View style={styles.modalForm}>
+              <Text style={styles.modalLabel}>Display Name</Text>
+              <TextInput
+                style={GlobalStyles.input}
+                value={editName}
+                onChangeText={setEditName}
+                placeholder="Enter your name"
+                placeholderTextColor={Colors.dark.textMuted}
+                maxLength={50}
+              />
+              <Text style={styles.modalHelperText}>
+                This is how you&apos;ll appear to other users
+              </Text>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[GlobalStyles.buttonSecondary, { flex: 1, marginRight: 8 }]}
+                onPress={() => setIsEditModalVisible(false)}
+              >
+                <Text style={GlobalStyles.buttonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[GlobalStyles.button, { flex: 1, marginLeft: 8 }, isUpdating && styles.buttonDisabled]}
+                onPress={handleSaveProfile}
+                disabled={isUpdating}
+              >
+                <Text style={GlobalStyles.buttonTextPrimary}>
+                  {isUpdating ? 'Saving...' : 'Save'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -228,8 +287,13 @@ const styles = {
     color: Colors.dark.primary,
     fontWeight: '600',
   },
-  placeholder: {
-    width: 60, // Same width as back button for centering
+  logoutButton: {
+    padding: 8,
+  },
+  logoutText: {
+    fontSize: 14,
+    color: Colors.dark.error,
+    fontWeight: '600',
   },
   scrollContainer: {
     padding: 16,
@@ -284,8 +348,8 @@ const styles = {
     color: Colors.dark.text,
     marginBottom: 4,
   },
-  profileUsername: {
-    fontSize: 16,
+  profileRole: {
+    fontSize: 14,
     color: Colors.dark.textSecondary,
     marginBottom: 4,
   },
@@ -327,6 +391,29 @@ const styles = {
     color: Colors.dark.text,
     marginBottom: 16,
   },
+  walletCard: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 8,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F6851B', // MetaMask orange
+  },
+  walletLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: Colors.dark.text,
+    marginBottom: 4,
+  },
+  walletAddress: {
+    fontSize: 12,
+    color: Colors.dark.textSecondary,
+    fontFamily: 'monospace',
+    marginBottom: 8,
+  },
+  walletNote: {
+    fontSize: 12,
+    color: Colors.dark.textMuted,
+  },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -358,57 +445,49 @@ const styles = {
     color: Colors.dark.textMuted,
     textAlign: 'center',
   },
-  goalCard: {
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 12,
+  actionButtons: {
+    gap: 12,
   },
-  goalTitle: {
+  buttonDisabled: {
+    opacity: 0.6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: Colors.dark.surface,
+    borderRadius: 12,
+    padding: 24,
+    width: '100%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: Colors.dark.text,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalForm: {
+    marginBottom: 24,
+  },
+  modalLabel: {
     fontSize: 16,
     fontWeight: '600',
     color: Colors.dark.text,
     marginBottom: 8,
   },
-  goalProgress: {
-    width: '100%',
-  },
-  goalText: {
+  modalHelperText: {
     fontSize: 12,
     color: Colors.dark.textMuted,
     marginTop: 4,
   },
-  achievementsGrid: {
+  modalButtons: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     justifyContent: 'space-between',
-  },
-  achievementCard: {
-    backgroundColor: Colors.dark.surface,
-    borderRadius: 8,
-    padding: 16,
-    width: '48%',
-    marginBottom: 12,
-    alignItems: 'center',
-  },
-  achievementIcon: {
-    fontSize: 32,
-    marginBottom: 8,
-  },
-  achievementTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: Colors.dark.text,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  achievementDescription: {
-    fontSize: 12,
-    color: Colors.dark.textSecondary,
-    textAlign: 'center',
-    lineHeight: 16,
-  },
-  actionButtons: {
-    gap: 12,
   },
 };
