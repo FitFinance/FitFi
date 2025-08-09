@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, SafeAreaView, FlatList } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  SafeAreaView,
+  FlatList,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
@@ -149,8 +155,15 @@ export default function PreviousDuelsScreen() {
           <Text style={styles.completedAt}>{duel.completedAt}</Text>
         </View>
         <View style={styles.outcomeContainer}>
-          <View style={[styles.outcomeBadge, { backgroundColor: getOutcomeColor(duel.outcome) }]}>
-            <Text style={styles.outcomeText}>{getOutcomeText(duel.outcome)}</Text>
+          <View
+            style={[
+              styles.outcomeBadge,
+              { backgroundColor: getOutcomeColor(duel.outcome) },
+            ]}
+          >
+            <Text style={styles.outcomeText}>
+              {getOutcomeText(duel.outcome)}
+            </Text>
           </View>
           <Text style={styles.outcomeIcon}>{getOutcomeIcon(duel.outcome)}</Text>
         </View>
@@ -159,10 +172,17 @@ export default function PreviousDuelsScreen() {
       <View style={styles.stepsComparison}>
         <View style={styles.stepsSide}>
           <Text style={styles.stepsLabel}>You</Text>
-          <Text style={[
-            styles.stepsNumber,
-            { color: duel.mySteps >= duel.theirSteps ? Colors.dark.success : Colors.dark.text }
-          ]}>
+          <Text
+            style={[
+              styles.stepsNumber,
+              {
+                color:
+                  duel.mySteps >= duel.theirSteps
+                    ? Colors.dark.success
+                    : Colors.dark.text,
+              },
+            ]}
+          >
             {duel.mySteps.toLocaleString()}
           </Text>
         </View>
@@ -171,10 +191,17 @@ export default function PreviousDuelsScreen() {
         </View>
         <View style={styles.stepsSide}>
           <Text style={styles.stepsLabel}>Opponent</Text>
-          <Text style={[
-            styles.stepsNumber,
-            { color: duel.theirSteps > duel.mySteps ? Colors.dark.error : Colors.dark.text }
-          ]}>
+          <Text
+            style={[
+              styles.stepsNumber,
+              {
+                color:
+                  duel.theirSteps > duel.mySteps
+                    ? Colors.dark.error
+                    : Colors.dark.text,
+              },
+            ]}
+          >
             {duel.theirSteps.toLocaleString()}
           </Text>
         </View>
@@ -187,17 +214,27 @@ export default function PreviousDuelsScreen() {
         </View>
         <View style={styles.rewardRow}>
           <Text style={styles.rewardLabel}>
-            {duel.outcome === 'won' ? 'Reward:' : duel.outcome === 'tied' ? 'Returned:' : 'Lost:'}
+            {duel.outcome === 'won'
+              ? 'Reward:'
+              : duel.outcome === 'tied'
+              ? 'Returned:'
+              : 'Lost:'}
           </Text>
-          <Text style={[
-            styles.rewardValue,
-            {
-              color: duel.outcome === 'won' ? Colors.dark.success :
-                     duel.outcome === 'tied' ? Colors.dark.warning :
-                     Colors.dark.error
-            }
-          ]}>
-            {duel.outcome === 'lost' ? '-' : '+'}{duel.reward} FF
+          <Text
+            style={[
+              styles.rewardValue,
+              {
+                color:
+                  duel.outcome === 'won'
+                    ? Colors.dark.success
+                    : duel.outcome === 'tied'
+                    ? Colors.dark.warning
+                    : Colors.dark.error,
+              },
+            ]}
+          >
+            {duel.outcome === 'lost' ? '-' : '+'}
+            {duel.reward} FF
           </Text>
         </View>
       </View>
@@ -209,21 +246,30 @@ export default function PreviousDuelsScreen() {
       <Text style={GlobalStyles.emptyStateIcon}>📊</Text>
       <Text style={GlobalStyles.emptyStateTitle}>No Completed Duels</Text>
       <Text style={GlobalStyles.emptyStateText}>
-        Your completed challenges and duels will appear here. Start your first challenge to build your history!
+        Your completed challenges and duels will appear here. Start your first
+        challenge to build your history!
       </Text>
       <TouchableOpacity
         style={[GlobalStyles.button, styles.emptyActionButton]}
         onPress={() => router.push('/challenges')}
       >
-        <Text style={GlobalStyles.buttonTextPrimary}>Find Your First Challenge</Text>
+        <Text style={GlobalStyles.buttonTextPrimary}>
+          Find Your First Challenge
+        </Text>
       </TouchableOpacity>
     </View>
   );
 
   const getTotalStats = () => {
-    const totalWins = mockCompletedDuels.filter(d => d.outcome === 'won').length;
-    const totalLosses = mockCompletedDuels.filter(d => d.outcome === 'lost').length;
-    const totalTies = mockCompletedDuels.filter(d => d.outcome === 'tied').length;
+    const totalWins = mockCompletedDuels.filter(
+      (d) => d.outcome === 'won'
+    ).length;
+    const totalLosses = mockCompletedDuels.filter(
+      (d) => d.outcome === 'lost'
+    ).length;
+    const totalTies = mockCompletedDuels.filter(
+      (d) => d.outcome === 'tied'
+    ).length;
     const totalEarnings = mockCompletedDuels.reduce((sum, d) => {
       return sum + (d.outcome === 'lost' ? -d.stake : d.reward);
     }, 0);
@@ -248,11 +294,19 @@ export default function PreviousDuelsScreen() {
         <Text style={styles.statLabel}>Ties</Text>
       </View>
       <View style={styles.statItem}>
-        <Text style={[
-          styles.statNumber,
-          { color: stats.totalEarnings >= 0 ? Colors.dark.success : Colors.dark.error }
-        ]}>
-          {stats.totalEarnings >= 0 ? '+' : ''}{stats.totalEarnings}
+        <Text
+          style={[
+            styles.statNumber,
+            {
+              color:
+                stats.totalEarnings >= 0
+                  ? Colors.dark.success
+                  : Colors.dark.error,
+            },
+          ]}
+        >
+          {stats.totalEarnings >= 0 ? '+' : ''}
+          {stats.totalEarnings}
         </Text>
         <Text style={styles.statLabel}>Net FF</Text>
       </View>
@@ -264,7 +318,8 @@ export default function PreviousDuelsScreen() {
       <View style={styles.header}>
         <Text style={GlobalStyles.title}>Previous Duels</Text>
         <Text style={styles.subtitle}>
-          {mockCompletedDuels.length} completed {mockCompletedDuels.length === 1 ? 'duel' : 'duels'}
+          {mockCompletedDuels.length} completed{' '}
+          {mockCompletedDuels.length === 1 ? 'duel' : 'duels'}
         </Text>
       </View>
 

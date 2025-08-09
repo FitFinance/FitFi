@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Switch, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Switch,
+  Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
@@ -31,15 +39,24 @@ export default function SettingsScreen() {
   };
 
   const handleExportData = () => {
-    Alert.alert('Export Data', 'This feature will be available in a future update.');
+    Alert.alert(
+      'Export Data',
+      'This feature will be available in a future update.'
+    );
   };
 
   const handleConnectTracker = () => {
-    Alert.alert('Connect Fitness Tracker', 'This feature will be available in a future update.');
+    Alert.alert(
+      'Connect Fitness Tracker',
+      'This feature will be available in a future update.'
+    );
   };
 
   const handleWalletSettings = () => {
-    Alert.alert('Wallet Settings', 'This feature will be available in a future update.');
+    Alert.alert(
+      'Wallet Settings',
+      'This feature will be available in a future update.'
+    );
   };
 
   const handleSupport = () => {
@@ -47,19 +64,25 @@ export default function SettingsScreen() {
   };
 
   const handlePrivacy = () => {
-    Alert.alert('Privacy Policy', 'This feature will be available in a future update.');
+    Alert.alert(
+      'Privacy Policy',
+      'This feature will be available in a future update.'
+    );
   };
 
   const handleTerms = () => {
-    Alert.alert('Terms of Service', 'This feature will be available in a future update.');
+    Alert.alert(
+      'Terms of Service',
+      'This feature will be available in a future update.'
+    );
   };
 
-  const SettingRow = ({ 
-    title, 
-    subtitle, 
-    onPress, 
-    rightElement, 
-    showArrow = true 
+  const SettingRow = ({
+    title,
+    subtitle,
+    onPress,
+    rightElement,
+    showArrow = true,
   }: {
     title: string;
     subtitle?: string;
@@ -76,7 +99,8 @@ export default function SettingsScreen() {
         <Text style={styles.settingTitle}>{title}</Text>
         {subtitle && <Text style={styles.settingSubtitle}>{subtitle}</Text>}
       </View>
-      {rightElement || (showArrow && onPress && <Text style={styles.arrow}>→</Text>)}
+      {rightElement ||
+        (showArrow && onPress && <Text style={styles.arrow}>→</Text>)}
     </TouchableOpacity>
   );
 
@@ -113,59 +137,71 @@ export default function SettingsScreen() {
         </View>
 
         {/* Preferences */}
-        <SectionHeader title="Preferences" />
+        <SectionHeader title='Preferences' />
         <View style={styles.section}>
           <SettingRow
-            title="Push Notifications"
-            subtitle="Get notified about duels and challenges"
+            title='Push Notifications'
+            subtitle='Get notified about duels and challenges'
             rightElement={
               <Switch
                 value={notifications}
                 onValueChange={setNotifications}
-                trackColor={{ false: Colors.dark.border, true: Colors.dark.primary }}
-                thumbColor="#FFFFFF"
+                trackColor={{
+                  false: Colors.dark.border,
+                  true: Colors.dark.primary,
+                }}
+                thumbColor='#FFFFFF'
               />
             }
             showArrow={false}
           />
-          
+
           <SettingRow
-            title="Fitness Reminders"
-            subtitle="Daily reminders to stay active"
+            title='Fitness Reminders'
+            subtitle='Daily reminders to stay active'
             rightElement={
               <Switch
                 value={reminders}
                 onValueChange={setReminders}
-                trackColor={{ false: Colors.dark.border, true: Colors.dark.primary }}
-                thumbColor="#FFFFFF"
+                trackColor={{
+                  false: Colors.dark.border,
+                  true: Colors.dark.primary,
+                }}
+                thumbColor='#FFFFFF'
               />
             }
             showArrow={false}
           />
-          
+
           <SettingRow
-            title="Auto-join Challenges"
-            subtitle="Automatically join matching challenges"
+            title='Auto-join Challenges'
+            subtitle='Automatically join matching challenges'
             rightElement={
               <Switch
                 value={autoJoin}
                 onValueChange={setAutoJoin}
-                trackColor={{ false: Colors.dark.border, true: Colors.dark.primary }}
-                thumbColor="#FFFFFF"
+                trackColor={{
+                  false: Colors.dark.border,
+                  true: Colors.dark.primary,
+                }}
+                thumbColor='#FFFFFF'
               />
             }
             showArrow={false}
           />
-          
+
           <SettingRow
-            title="Data Sync"
-            subtitle="Sync fitness data across devices"
+            title='Data Sync'
+            subtitle='Sync fitness data across devices'
             rightElement={
               <Switch
                 value={dataSync}
                 onValueChange={setDataSync}
-                trackColor={{ false: Colors.dark.border, true: Colors.dark.primary }}
-                thumbColor="#FFFFFF"
+                trackColor={{
+                  false: Colors.dark.border,
+                  true: Colors.dark.primary,
+                }}
+                thumbColor='#FFFFFF'
               />
             }
             showArrow={false}
@@ -173,56 +209,56 @@ export default function SettingsScreen() {
         </View>
 
         {/* Theme Selection */}
-        <SectionHeader title="Appearance" />
+        <SectionHeader title='Appearance' />
         <View style={styles.section}>
           <SettingRow
-            title="Theme"
-            subtitle="Dark mode (forced for demo)"
+            title='Theme'
+            subtitle='Dark mode (forced for demo)'
             rightElement={<Text style={styles.themeValue}>Dark</Text>}
             showArrow={false}
           />
         </View>
 
         {/* Account */}
-        <SectionHeader title="Account" />
+        <SectionHeader title='Account' />
         <View style={styles.section}>
           <SettingRow
-            title="Connect Fitness Tracker"
-            subtitle="Link your wearable device"
+            title='Connect Fitness Tracker'
+            subtitle='Link your wearable device'
             onPress={handleConnectTracker}
           />
-          
+
           <SettingRow
-            title="Wallet Settings"
-            subtitle="Manage your connected wallet"
+            title='Wallet Settings'
+            subtitle='Manage your connected wallet'
             onPress={handleWalletSettings}
           />
-          
+
           <SettingRow
-            title="Export Data"
-            subtitle="Download your fitness data"
+            title='Export Data'
+            subtitle='Download your fitness data'
             onPress={handleExportData}
           />
         </View>
 
         {/* Support */}
-        <SectionHeader title="Support & Legal" />
+        <SectionHeader title='Support & Legal' />
         <View style={styles.section}>
           <SettingRow
-            title="Help & Support"
-            subtitle="Get help with FitFi"
+            title='Help & Support'
+            subtitle='Get help with FitFi'
             onPress={handleSupport}
           />
-          
+
           <SettingRow
-            title="Privacy Policy"
-            subtitle="How we protect your data"
+            title='Privacy Policy'
+            subtitle='How we protect your data'
             onPress={handlePrivacy}
           />
-          
+
           <SettingRow
-            title="Terms of Service"
-            subtitle="FitFi terms and conditions"
+            title='Terms of Service'
+            subtitle='FitFi terms and conditions'
             onPress={handleTerms}
           />
         </View>
@@ -230,11 +266,11 @@ export default function SettingsScreen() {
         {/* Debug Section (Dev Only) */}
         {__DEV__ && (
           <>
-            <SectionHeader title="Developer" />
+            <SectionHeader title='Developer' />
             <View style={styles.section}>
               <SettingRow
-                title="Network Test"
-                subtitle="Test network connectivity"
+                title='Network Test'
+                subtitle='Test network connectivity'
                 onPress={() => router.push('/network-test')}
               />
             </View>
@@ -247,7 +283,9 @@ export default function SettingsScreen() {
             style={[GlobalStyles.button, styles.logoutButton]}
             onPress={handleLogout}
           >
-            <Text style={[GlobalStyles.buttonTextPrimary, styles.logoutText]}>Logout</Text>
+            <Text style={[GlobalStyles.buttonTextPrimary, styles.logoutText]}>
+              Logout
+            </Text>
           </TouchableOpacity>
         </View>
 

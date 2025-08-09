@@ -1,12 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
 export default function DuelHealthMonitorScreen() {
   const router = useRouter();
   const { duelId } = useLocalSearchParams();
-  
+
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [countdown, setCountdown] = useState(3600); // 60 minutes in seconds
   const [mySteps, setMySteps] = useState(8420);
@@ -28,18 +35,18 @@ export default function DuelHealthMonitorScreen() {
     if (isMonitoring && countdown > 0) {
       timer = setTimeout(() => {
         setCountdown(countdown - 1);
-        
+
         // Simulate step updates
         if (Math.random() > 0.7) {
-          setMySteps(prev => prev + Math.floor(Math.random() * 50));
+          setMySteps((prev) => prev + Math.floor(Math.random() * 50));
           setLastUpdate(new Date());
         }
         if (Math.random() > 0.8) {
-          setOpponentSteps(prev => prev + Math.floor(Math.random() * 40));
+          setOpponentSteps((prev) => prev + Math.floor(Math.random() * 40));
         }
       }, 1000);
     }
-    
+
     return () => clearTimeout(timer);
   }, [isMonitoring, countdown]);
 
@@ -47,7 +54,9 @@ export default function DuelHealthMonitorScreen() {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    return `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
   const getStepDifference = () => {
@@ -92,9 +101,11 @@ export default function DuelHealthMonitorScreen() {
           style: 'destructive',
           onPress: () => {
             setIsMonitoring(false);
-            Alert.alert('Challenge Completed', 'Challenge ended successfully!', [
-              { text: 'OK', onPress: () => router.back() }
-            ]);
+            Alert.alert(
+              'Challenge Completed',
+              'Challenge ended successfully!',
+              [{ text: 'OK', onPress: () => router.back() }]
+            );
           },
         },
       ]
@@ -102,7 +113,10 @@ export default function DuelHealthMonitorScreen() {
   };
 
   const handleSubmitProgress = () => {
-    Alert.alert('Progress Submitted', 'Your current progress has been submitted to the blockchain.');
+    Alert.alert(
+      'Progress Submitted',
+      'Your current progress has been submitted to the blockchain.'
+    );
   };
 
   const stepDiff = getStepDifference();
@@ -110,9 +124,11 @@ export default function DuelHealthMonitorScreen() {
   useEffect(() => {
     if (countdown === 0 && isMonitoring) {
       setIsMonitoring(false);
-      Alert.alert('Challenge Complete!', 'The 60-minute challenge has ended. Great work!', [
-        { text: 'View Results', onPress: () => router.back() }
-      ]);
+      Alert.alert(
+        'Challenge Complete!',
+        'The 60-minute challenge has ended. Great work!',
+        [{ text: 'View Results', onPress: () => router.back() }]
+      );
     }
   }, [countdown, isMonitoring, router]);
 
@@ -134,10 +150,16 @@ export default function DuelHealthMonitorScreen() {
         <View style={styles.challengeHeader}>
           <Text style={styles.challengeTitle}>{duel.challengeType}</Text>
           <Text style={styles.opponent}>vs {duel.opponent}</Text>
-          <View style={[
-            styles.statusIndicator,
-            { backgroundColor: isMonitoring ? Colors.dark.success : Colors.dark.warning }
-          ]}>
+          <View
+            style={[
+              styles.statusIndicator,
+              {
+                backgroundColor: isMonitoring
+                  ? Colors.dark.success
+                  : Colors.dark.warning,
+              },
+            ]}
+          >
             <Text style={styles.statusText}>
               {isMonitoring ? '🟢 LIVE' : '⏸️ PAUSED'}
             </Text>
@@ -147,10 +169,15 @@ export default function DuelHealthMonitorScreen() {
         {/* Countdown Timer */}
         <View style={styles.timerSection}>
           <Text style={styles.timerLabel}>Time Remaining</Text>
-          <Text style={[
-            styles.timerValue,
-            { color: countdown < 300 ? Colors.dark.error : Colors.dark.primary }
-          ]}>
+          <Text
+            style={[
+              styles.timerValue,
+              {
+                color:
+                  countdown < 300 ? Colors.dark.error : Colors.dark.primary,
+              },
+            ]}
+          >
             {formatTime(countdown)}
           </Text>
           <Text style={styles.timerSubtext}>
@@ -161,14 +188,20 @@ export default function DuelHealthMonitorScreen() {
         {/* Real-time Steps Comparison */}
         <View style={styles.stepsSection}>
           <Text style={styles.sectionTitle}>Real-time Progress</Text>
-          
+
           <View style={styles.stepsDisplay}>
             <View style={styles.playerSection}>
               <Text style={styles.playerLabel}>You</Text>
-              <Text style={[
-                styles.stepsNumber,
-                { color: stepDiff.isLeading ? Colors.dark.success : Colors.dark.text }
-              ]}>
+              <Text
+                style={[
+                  styles.stepsNumber,
+                  {
+                    color: stepDiff.isLeading
+                      ? Colors.dark.success
+                      : Colors.dark.text,
+                  },
+                ]}
+              >
                 {mySteps.toLocaleString()}
               </Text>
               <Text style={styles.stepsLabel}>steps</Text>
@@ -180,16 +213,23 @@ export default function DuelHealthMonitorScreen() {
             <View style={styles.vsSection}>
               <Text style={styles.vsText}>VS</Text>
               <Text style={styles.differenceText}>
-                {stepDiff.isLeading ? '+' : '-'}{stepDiff.diff}
+                {stepDiff.isLeading ? '+' : '-'}
+                {stepDiff.diff}
               </Text>
             </View>
 
             <View style={styles.playerSection}>
               <Text style={styles.playerLabel}>{duel.opponent}</Text>
-              <Text style={[
-                styles.stepsNumber,
-                { color: !stepDiff.isLeading ? Colors.dark.error : Colors.dark.text }
-              ]}>
+              <Text
+                style={[
+                  styles.stepsNumber,
+                  {
+                    color: !stepDiff.isLeading
+                      ? Colors.dark.error
+                      : Colors.dark.text,
+                  },
+                ]}
+              >
                 {opponentSteps.toLocaleString()}
               </Text>
               <Text style={styles.stepsLabel}>steps</Text>
@@ -241,23 +281,29 @@ export default function DuelHealthMonitorScreen() {
           <Text style={styles.sectionTitle}>Challenge Progress</Text>
           <View style={styles.progressCard}>
             <Text style={styles.progressTitle}>Current Standing</Text>
-            <Text style={[
-              styles.progressStatus,
-              { color: stepDiff.isLeading ? Colors.dark.success : Colors.dark.error }
-            ]}>
+            <Text
+              style={[
+                styles.progressStatus,
+                {
+                  color: stepDiff.isLeading
+                    ? Colors.dark.success
+                    : Colors.dark.error,
+                },
+              ]}
+            >
               {stepDiff.isLeading ? '🟢 You are winning!' : '🔴 You are behind'}
             </Text>
             <Text style={styles.progressDetails}>
-              {stepDiff.isLeading 
-                ? `You lead by ${stepDiff.diff} steps` 
+              {stepDiff.isLeading
+                ? `You lead by ${stepDiff.diff} steps`
                 : `You need ${stepDiff.diff} more steps to take the lead`}
             </Text>
-            
+
             <View style={styles.motivationSection}>
               <Text style={styles.motivationText}>
-                {stepDiff.isLeading 
-                  ? "Great job! Keep up the pace! 💪" 
-                  : "You can do this! Pick up the pace! 🏃‍♂️"}
+                {stepDiff.isLeading
+                  ? 'Great job! Keep up the pace! 💪'
+                  : 'You can do this! Pick up the pace! 🏃‍♂️'}
               </Text>
             </View>
           </View>
@@ -270,7 +316,9 @@ export default function DuelHealthMonitorScreen() {
               style={[GlobalStyles.button, styles.startButton]}
               onPress={handleStartChallenge}
             >
-              <Text style={GlobalStyles.buttonTextPrimary}>Start 60-Min Challenge</Text>
+              <Text style={GlobalStyles.buttonTextPrimary}>
+                Start 60-Min Challenge
+              </Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.controlButtons}>
@@ -279,10 +327,12 @@ export default function DuelHealthMonitorScreen() {
                   style={[GlobalStyles.button, styles.resumeButton]}
                   onPress={handleResumeChallenge}
                 >
-                  <Text style={GlobalStyles.buttonTextPrimary}>Resume Monitoring</Text>
+                  <Text style={GlobalStyles.buttonTextPrimary}>
+                    Resume Monitoring
+                  </Text>
                 </TouchableOpacity>
               )}
-              
+
               {isMonitoring && (
                 <TouchableOpacity
                   style={[GlobalStyles.buttonSecondary, styles.pauseButton]}
@@ -291,19 +341,24 @@ export default function DuelHealthMonitorScreen() {
                   <Text style={GlobalStyles.buttonText}>Pause Monitoring</Text>
                 </TouchableOpacity>
               )}
-              
+
               <TouchableOpacity
                 style={[GlobalStyles.buttonSecondary, styles.submitButton]}
                 onPress={handleSubmitProgress}
               >
                 <Text style={GlobalStyles.buttonText}>Submit Progress</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[GlobalStyles.button, styles.endButton]}
                 onPress={handleEndChallenge}
               >
-                <Text style={[GlobalStyles.buttonTextPrimary, { color: Colors.dark.error }]}>
+                <Text
+                  style={[
+                    GlobalStyles.buttonTextPrimary,
+                    { color: Colors.dark.error },
+                  ]}
+                >
                   End Challenge
                 </Text>
               </TouchableOpacity>
@@ -315,10 +370,10 @@ export default function DuelHealthMonitorScreen() {
         <View style={styles.instructionsSection}>
           <Text style={styles.instructionsTitle}>📱 How it works</Text>
           <Text style={styles.instructionsText}>
-            • Your steps are automatically tracked via Health Connect{'\n'}
-            • Progress updates every minute during active monitoring{'\n'}
-            • Submit progress periodically to secure your position{'\n'}
-            • Challenge ends when timer reaches zero or you end it manually
+            • Your steps are automatically tracked via Health Connect{'\n'}•
+            Progress updates every minute during active monitoring{'\n'}• Submit
+            progress periodically to secure your position{'\n'}• Challenge ends
+            when timer reaches zero or you end it manually
           </Text>
         </View>
       </ScrollView>

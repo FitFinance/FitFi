@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
@@ -13,7 +21,7 @@ export default function LoginScreen() {
     try {
       setIsConnecting(true);
       const response = await connectWallet();
-      
+
       if (response.success) {
         Alert.alert(
           response.details?.title || 'Success',
@@ -51,17 +59,13 @@ export default function LoginScreen() {
   };
 
   const handleDemoLogin = () => {
-    Alert.alert(
-      'Demo Login',
-      'This will log you in with demo credentials',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Continue', 
-          onPress: () => router.replace('/(tabs)/home')
-        },
-      ]
-    );
+    Alert.alert('Demo Login', 'This will log you in with demo credentials', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Continue',
+        onPress: () => router.replace('/(tabs)/home'),
+      },
+    ]);
   };
 
   const handleConnectWalletPage = () => {
@@ -78,33 +82,44 @@ export default function LoginScreen() {
                 <Text style={styles.logoText}>FF</Text>
               </View>
               <Text style={styles.appName}>FitFi</Text>
-              <Text style={styles.subtitle}>Connect your wallet to get started</Text>
+              <Text style={styles.subtitle}>
+                Connect your wallet to get started
+              </Text>
             </View>
           </View>
 
           <View style={styles.formContainer}>
             <Text style={styles.description}>
-              FitFi uses MetaMask to authenticate users and secure your fitness data on the blockchain.
+              FitFi uses MetaMask to authenticate users and secure your fitness
+              data on the blockchain.
             </Text>
 
             <TouchableOpacity
               style={[
-                GlobalStyles.button, 
+                GlobalStyles.button,
                 styles.metamaskButton,
-                isConnecting && styles.buttonDisabled
+                isConnecting && styles.buttonDisabled,
               ]}
               onPress={handleWalletConnect}
               disabled={isConnecting}
             >
               {isConnecting ? (
                 <View style={styles.loadingContainer}>
-                  <ActivityIndicator size="small" color="#FFFFFF" style={{ marginRight: 8 }} />
-                  <Text style={GlobalStyles.buttonTextPrimary}>Connecting...</Text>
+                  <ActivityIndicator
+                    size='small'
+                    color='#FFFFFF'
+                    style={{ marginRight: 8 }}
+                  />
+                  <Text style={GlobalStyles.buttonTextPrimary}>
+                    Connecting...
+                  </Text>
                 </View>
               ) : (
                 <View style={styles.buttonContent}>
                   <Text style={styles.metamaskIcon}>🦊</Text>
-                  <Text style={GlobalStyles.buttonTextPrimary}>Connect MetaMask</Text>
+                  <Text style={GlobalStyles.buttonTextPrimary}>
+                    Connect MetaMask
+                  </Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -119,8 +134,9 @@ export default function LoginScreen() {
             <View style={styles.infoSection}>
               <Text style={styles.infoTitle}>New to MetaMask?</Text>
               <Text style={styles.infoText}>
-                MetaMask is a secure wallet that lets you connect to blockchain apps. 
-                Download the MetaMask mobile app first, create a wallet, then return here to connect.
+                MetaMask is a secure wallet that lets you connect to blockchain
+                apps. Download the MetaMask mobile app first, create a wallet,
+                then return here to connect.
               </Text>
             </View>
 
@@ -130,7 +146,9 @@ export default function LoginScreen() {
                 style={[GlobalStyles.buttonSecondary, styles.devButton]}
                 onPress={handleDemoLogin}
               >
-                <Text style={GlobalStyles.buttonText}>Demo Login (No Wallet)</Text>
+                <Text style={GlobalStyles.buttonText}>
+                  Demo Login (No Wallet)
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

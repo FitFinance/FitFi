@@ -1,5 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, FlatList } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  FlatList,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
@@ -21,7 +28,9 @@ interface Challenge {
 
 export default function ChallengesScreen() {
   const router = useRouter();
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'daily' | 'weekly' | 'custom'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<
+    'all' | 'daily' | 'weekly' | 'custom'
+  >('all');
 
   const mockChallenges: Challenge[] = [
     {
@@ -35,7 +44,11 @@ export default function ChallengesScreen() {
       currentParticipants: 67,
       reward: 100,
       difficulty: 'easy',
-      requirements: ['10,000 steps daily', 'No rest days', 'Auto-tracking only'],
+      requirements: [
+        '10,000 steps daily',
+        'No rest days',
+        'Auto-tracking only',
+      ],
       featured: true,
     },
     {
@@ -49,7 +62,11 @@ export default function ChallengesScreen() {
       currentParticipants: 23,
       reward: 150,
       difficulty: 'medium',
-      requirements: ['20,000 steps on Saturday', '20,000 steps on Sunday', 'Weekend only'],
+      requirements: [
+        '20,000 steps on Saturday',
+        '20,000 steps on Sunday',
+        'Weekend only',
+      ],
     },
     {
       id: '3',
@@ -76,7 +93,11 @@ export default function ChallengesScreen() {
       currentParticipants: 145,
       reward: 60,
       difficulty: 'easy',
-      requirements: ['5,000 steps by 9 AM', '5 consecutive days', 'Early bird bonus'],
+      requirements: [
+        '5,000 steps by 9 AM',
+        '5 consecutive days',
+        'Early bird bonus',
+      ],
     },
     {
       id: '5',
@@ -102,7 +123,11 @@ export default function ChallengesScreen() {
       currentParticipants: 34,
       reward: 200,
       difficulty: 'medium',
-      requirements: ['500+ calories daily', 'Walking only', 'Health Connect verified'],
+      requirements: [
+        '500+ calories daily',
+        'Walking only',
+        'Health Connect verified',
+      ],
     },
   ];
 
@@ -113,25 +138,34 @@ export default function ChallengesScreen() {
     { key: 'custom', label: 'Custom' },
   ];
 
-  const filteredChallenges = selectedFilter === 'all' 
-    ? mockChallenges 
-    : mockChallenges.filter(c => c.type === selectedFilter);
+  const filteredChallenges =
+    selectedFilter === 'all'
+      ? mockChallenges
+      : mockChallenges.filter((c) => c.type === selectedFilter);
 
   const getDifficultyColor = (difficulty: Challenge['difficulty']) => {
     switch (difficulty) {
-      case 'easy': return Colors.dark.success;
-      case 'medium': return Colors.dark.warning;
-      case 'hard': return Colors.dark.error;
-      default: return Colors.dark.textMuted;
+      case 'easy':
+        return Colors.dark.success;
+      case 'medium':
+        return Colors.dark.warning;
+      case 'hard':
+        return Colors.dark.error;
+      default:
+        return Colors.dark.textMuted;
     }
   };
 
   const getDifficultyIcon = (difficulty: Challenge['difficulty']) => {
     switch (difficulty) {
-      case 'easy': return '🟢';
-      case 'medium': return '🟡';
-      case 'hard': return '🔴';
-      default: return '⚪';
+      case 'easy':
+        return '🟢';
+      case 'medium':
+        return '🟡';
+      case 'hard':
+        return '🔴';
+      default:
+        return '⚪';
     }
   };
 
@@ -141,20 +175,33 @@ export default function ChallengesScreen() {
 
   const handleJoinChallenge = (challenge: Challenge) => {
     // For now, just show an alert. In real app, this would integrate with smart contracts
-    const participationRate = getParticipationRate(challenge.currentParticipants, challenge.maxParticipants);
+    const participationRate = getParticipationRate(
+      challenge.currentParticipants,
+      challenge.maxParticipants
+    );
     if (participationRate >= 100) {
       alert('This challenge is full! Try another one.');
     } else {
-      alert(`Joining "${challenge.title}" challenge! This will be implemented with smart contract integration.`);
+      alert(
+        `Joining "${challenge.title}" challenge! This will be implemented with smart contract integration.`
+      );
     }
   };
 
   const renderChallengeCard = ({ item: challenge }: { item: Challenge }) => {
-    const participationRate = getParticipationRate(challenge.currentParticipants, challenge.maxParticipants);
+    const participationRate = getParticipationRate(
+      challenge.currentParticipants,
+      challenge.maxParticipants
+    );
     const isFull = participationRate >= 100;
 
     return (
-      <View style={[styles.challengeCard, challenge.featured && styles.featuredCard]}>
+      <View
+        style={[
+          styles.challengeCard,
+          challenge.featured && styles.featuredCard,
+        ]}
+      >
         {challenge.featured && (
           <View style={styles.featuredBadge}>
             <Text style={styles.featuredText}>⭐ FEATURED</Text>
@@ -164,12 +211,21 @@ export default function ChallengesScreen() {
         <View style={styles.cardHeader}>
           <View style={styles.titleSection}>
             <Text style={styles.challengeTitle}>{challenge.title}</Text>
-            <Text style={styles.challengeDescription}>{challenge.description}</Text>
+            <Text style={styles.challengeDescription}>
+              {challenge.description}
+            </Text>
           </View>
-          
+
           <View style={styles.difficultyBadge}>
-            <Text style={styles.difficultyIcon}>{getDifficultyIcon(challenge.difficulty)}</Text>
-            <Text style={[styles.difficultyText, { color: getDifficultyColor(challenge.difficulty) }]}>
+            <Text style={styles.difficultyIcon}>
+              {getDifficultyIcon(challenge.difficulty)}
+            </Text>
+            <Text
+              style={[
+                styles.difficultyText,
+                { color: getDifficultyColor(challenge.difficulty) },
+              ]}
+            >
               {challenge.difficulty.toUpperCase()}
             </Text>
           </View>
@@ -186,34 +242,43 @@ export default function ChallengesScreen() {
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLabel}>Reward:</Text>
-            <Text style={[styles.detailValue, styles.rewardText]}>{challenge.reward} FF</Text>
+            <Text style={[styles.detailValue, styles.rewardText]}>
+              {challenge.reward} FF
+            </Text>
           </View>
         </View>
 
         <View style={styles.participationSection}>
           <View style={styles.participationInfo}>
             <Text style={styles.participationText}>
-              {challenge.currentParticipants}/{challenge.maxParticipants} participants
+              {challenge.currentParticipants}/{challenge.maxParticipants}{' '}
+              participants
             </Text>
             <Text style={styles.participationRate}>
               {participationRate}% full
             </Text>
           </View>
           <View style={styles.participationBar}>
-            <View style={[
-              styles.participationFill,
-              { 
-                width: `${Math.min(participationRate, 100)}%`,
-                backgroundColor: isFull ? Colors.dark.error : Colors.dark.primary
-              }
-            ]} />
+            <View
+              style={[
+                styles.participationFill,
+                {
+                  width: `${Math.min(participationRate, 100)}%`,
+                  backgroundColor: isFull
+                    ? Colors.dark.error
+                    : Colors.dark.primary,
+                },
+              ]}
+            />
           </View>
         </View>
 
         <View style={styles.requirementsSection}>
           <Text style={styles.requirementsTitle}>Requirements:</Text>
           {challenge.requirements.map((req, index) => (
-            <Text key={index} style={styles.requirementItem}>• {req}</Text>
+            <Text key={index} style={styles.requirementItem}>
+              • {req}
+            </Text>
           ))}
         </View>
 
@@ -221,16 +286,20 @@ export default function ChallengesScreen() {
           style={[
             GlobalStyles.button,
             styles.joinButton,
-            isFull && styles.joinButtonDisabled
+            isFull && styles.joinButtonDisabled,
           ]}
           onPress={() => handleJoinChallenge(challenge)}
           disabled={isFull}
         >
-          <Text style={[
-            GlobalStyles.buttonTextPrimary,
-            isFull && styles.joinButtonTextDisabled
-          ]}>
-            {isFull ? 'Challenge Full' : `Join Challenge (${challenge.stake} FF)`}
+          <Text
+            style={[
+              GlobalStyles.buttonTextPrimary,
+              isFull && styles.joinButtonTextDisabled,
+            ]}
+          >
+            {isFull
+              ? 'Challenge Full'
+              : `Join Challenge (${challenge.stake} FF)`}
           </Text>
         </TouchableOpacity>
       </View>
@@ -242,7 +311,8 @@ export default function ChallengesScreen() {
       <Text style={GlobalStyles.emptyStateIcon}>🎯</Text>
       <Text style={GlobalStyles.emptyStateTitle}>No Challenges Found</Text>
       <Text style={GlobalStyles.emptyStateText}>
-        No challenges match your current filter. Try selecting a different category or check back later for new challenges!
+        No challenges match your current filter. Try selecting a different
+        category or check back later for new challenges!
       </Text>
     </View>
   );
@@ -262,20 +332,27 @@ export default function ChallengesScreen() {
 
       {/* Filter Tabs */}
       <View style={styles.filterSection}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterContainer}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterContainer}
+        >
           {filters.map((filter) => (
             <TouchableOpacity
               key={filter.key}
               style={[
                 styles.filterButton,
-                selectedFilter === filter.key && styles.filterButtonActive
+                selectedFilter === filter.key && styles.filterButtonActive,
               ]}
               onPress={() => setSelectedFilter(filter.key as any)}
             >
-              <Text style={[
-                styles.filterButtonText,
-                selectedFilter === filter.key && styles.filterButtonTextActive
-              ]}>
+              <Text
+                style={[
+                  styles.filterButtonText,
+                  selectedFilter === filter.key &&
+                    styles.filterButtonTextActive,
+                ]}
+              >
                 {filter.label}
               </Text>
             </TouchableOpacity>

@@ -1,5 +1,6 @@
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ENV_CONFIG, getApiUrl, envLog } from './EnvironmentConfig';
 
 export interface User {
   id: string;
@@ -28,18 +29,14 @@ const STORAGE_KEYS = {
   USER_DATA: 'user_data',
 };
 
-// For development, we'll use a simple mock signature
 const generateMockSignature = (message: string, address: string): string => {
   return `mock_signature_${address}_${message.length}_${Date.now()}`;
 };
 
-// MetaMask deep linking
 const openMetaMask = async (message: string): Promise<string | null> => {
   try {
-    // For mobile, we'll simulate MetaMask signing
-    // In a real implementation, this would use deep linking or WalletConnect
     const mockSignature = generateMockSignature(message, 'mock_address');
-    
+
     return new Promise((resolve) => {
       Alert.alert(
         'MetaMask Signature',
@@ -67,38 +64,33 @@ class WalletService {
   private baseUrl: string;
 
   constructor() {
-    // You can change this to your backend URL
-    this.baseUrl = 'http://localhost:3000/api/v1'; // Update with your backend URL
+    this.baseUrl = ENV_CONFIG.apiBaseUrl;
+    envLog('info', 'WalletService initialized', { baseUrl: this.baseUrl });
   }
 
-  // Generate a sign-in message
   private generateSignMessage(address: string): string {
     const timestamp = new Date().toISOString();
     return `Welcome to FitFi!\n\nSign this message to authenticate your wallet.\n\nWallet: ${address}\nTimestamp: ${timestamp}\n\nThis request will not trigger a blockchain transaction or cost any gas fees.`;
   }
 
-  // Connect wallet and authenticate
   async connectWallet(): Promise<AuthResponse> {
     try {
-      // For demo purposes, we'll use a mock wallet address
-      // In a real app, this would come from MetaMask or another wallet
       const walletAddress = await this.getMockWalletAddress();
-      
+
       if (!walletAddress) {
         return {
           success: false,
           message: 'No wallet address provided',
           details: {
             title: 'Wallet Connection Failed',
-            description: 'Unable to get wallet address. Please ensure MetaMask is installed and unlocked.',
+            description:
+              'Unable to get wallet address. Please ensure MetaMask is installed and unlocked.',
           },
         };
       }
 
-      // Generate message to sign
       const message = this.generateSignMessage(walletAddress);
 
-      // Get signature from MetaMask (mock for now)
       const signature = await openMetaMask(message);
 
       if (!signature) {
@@ -107,13 +99,19 @@ class WalletService {
           message: 'User rejected the signature request',
           details: {
             title: 'Signature Rejected',
-            description: 'You need to sign the message to authenticate with your wallet.',
+            description:
+              'You need to sign the message to authenticate with your wallet.',
           },
         };
       }
 
-      // Authenticate with backend
-      const response = await fetch(`${this.baseUrl}/auth/wallet-auth`, {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        ENV_CONFIG.apiTimeout
+      );
+
+      const response = await fetch(getApiUrl('/auth/wallet-auth'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,14 +121,15 @@ class WalletService {
           signature,
           message,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json();
 
       if (data.success) {
-        // Store authentication data
         await this.storeAuthData(data.data.user, data.data.token);
-        
+
         return {
           success: true,
           message: data.message,
@@ -145,19 +144,19 @@ class WalletService {
         };
       }
     } catch (error) {
-      console.error('Wallet connection error:', error);
+      envLog('error', 'Wallet connection error', error);
       return {
         success: false,
         message: 'Connection failed',
         details: {
           title: 'Network Error',
-          description: 'Unable to connect to the server. Please check your internet connection and try again.',
+          description:
+            'Unable to connect to the server. Please check your internet connection and try again.',
         },
       };
     }
   }
 
-  // Mock wallet address for demo
   private async getMockWalletAddress(): Promise<string> {
     return new Promise((resolve) => {
       Alert.alert(
@@ -171,51 +170,56 @@ class WalletService {
           },
           {
             text: 'Use Demo Address',
-            onPress: () => resolve('0x742d35cc6cbf4532d44e98bbbb5b3d4b80c6efa9'),
+            onPress: () => resolve(ENV_CONFIG.mockWalletAddress),
           },
         ]
       );
     });
   }
 
-  // Store authentication data
   private async storeAuthData(user: User, token: string): Promise<void> {
     try {
-      await AsyncStorage.setItem(STORAGE_KEYS.WALLET_ADDRESS, user.walletAddress);
+      await AsyncStorage.setItem(
+        STORAGE_KEYS.WALLET_ADDRESS,
+        user.walletAddress
+      );
       await AsyncStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, token);
       await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(user));
     } catch (error) {
-      console.error('Error storing auth data:', error);
+      envLog('error', 'Error storing auth data', error);
     }
   }
 
-  // Get stored authentication data
-  async getStoredAuthData(): Promise<{ user: User | null; token: string | null; walletAddress: string | null }> {
+  async getStoredAuthData(): Promise<{
+    user: User | null;
+    token: string | null;
+    walletAddress: string | null;
+  }> {
     try {
-      const walletAddress = await AsyncStorage.getItem(STORAGE_KEYS.WALLET_ADDRESS);
+      const walletAddress = await AsyncStorage.getItem(
+        STORAGE_KEYS.WALLET_ADDRESS
+      );
       const token = await AsyncStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
       const userData = await AsyncStorage.getItem(STORAGE_KEYS.USER_DATA);
-      
+
       const user = userData ? JSON.parse(userData) : null;
-      
+
       return { user, token, walletAddress };
     } catch (error) {
-      console.error('Error getting stored auth data:', error);
+      envLog('error', 'Error getting stored auth data', error);
       return { user: null, token: null, walletAddress: null };
     }
   }
 
-  // Check if user is authenticated
   async isAuthenticated(): Promise<boolean> {
     const { token } = await this.getStoredAuthData();
     return !!token;
   }
 
-  // Get user profile from backend
   async getUserProfile(): Promise<AuthResponse> {
     try {
       const { token } = await this.getStoredAuthData();
-      
+
       if (!token) {
         return {
           success: false,
@@ -227,24 +231,34 @@ class WalletService {
         };
       }
 
-      const response = await fetch(`${this.baseUrl}/auth/profile`, {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        ENV_CONFIG.apiTimeout
+      );
+
+      const response = await fetch(getApiUrl('/auth/profile'), {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json();
-      
+
       if (data.success) {
-        // Update stored user data
-        await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(data.data.user));
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.USER_DATA,
+          JSON.stringify(data.data.user)
+        );
       }
 
       return data;
     } catch (error) {
-      console.error('Error getting user profile:', error);
+      envLog('error', 'Error getting user profile', error);
       return {
         success: false,
         message: 'Failed to get profile',
@@ -256,11 +270,10 @@ class WalletService {
     }
   }
 
-  // Update user profile (name)
   async updateProfile(name: string): Promise<AuthResponse> {
     try {
       const { token } = await this.getStoredAuthData();
-      
+
       if (!token) {
         return {
           success: false,
@@ -272,25 +285,35 @@ class WalletService {
         };
       }
 
-      const response = await fetch(`${this.baseUrl}/auth/profile`, {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        ENV_CONFIG.apiTimeout
+      );
+
+      const response = await fetch(getApiUrl('/auth/profile'), {
         method: 'PATCH',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ name }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const data = await response.json();
-      
+
       if (data.success) {
-        // Update stored user data
-        await AsyncStorage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(data.data.user));
+        await AsyncStorage.setItem(
+          STORAGE_KEYS.USER_DATA,
+          JSON.stringify(data.data.user)
+        );
       }
 
       return data;
     } catch (error) {
-      console.error('Error updating profile:', error);
+      envLog('error', 'Error updating profile', error);
       return {
         success: false,
         message: 'Failed to update profile',
@@ -302,7 +325,6 @@ class WalletService {
     }
   }
 
-  // Logout
   async logout(): Promise<void> {
     try {
       await AsyncStorage.multiRemove([
@@ -311,7 +333,7 @@ class WalletService {
         STORAGE_KEYS.USER_DATA,
       ]);
     } catch (error) {
-      console.error('Error during logout:', error);
+      envLog('error', 'Error during logout', error);
     }
   }
 }

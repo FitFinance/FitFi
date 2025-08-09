@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
+import {
+  ENV_CONFIG,
+  envLog,
+  validateEnvironment,
+} from '@/services/EnvironmentConfig';
 
 interface TestResult {
   name: string;
@@ -11,159 +22,602 @@ interface TestResult {
   details?: string;
 }
 
+interface BackendTestResult {
+  name: string;
+  status: 'passed' | 'failed';
+  duration: number;
+  message: string;
+  details?: string;
+}
+
+// Add a cached diagnostics response to avoid multiple network calls
+let cachedDiagnostics: any | null = null;
+let cachedAt: number = 0;
+const DIAGNOSTICS_CACHE_TTL = 10_000; // 10s
+
 export default function NetworkTestScreen() {
   const router = useRouter();
   const [tests, setTests] = useState<TestResult[]>([
     {
       name: 'Environment Check',
       status: 'pending',
-      details: 'Checking app environment and configuration'
+      details: 'Checking app environment and configuration',
     },
     {
       name: 'Network Connectivity',
       status: 'pending',
-      details: 'Testing internet connection and DNS resolution'
+      details: 'Testing internet connection and DNS resolution',
     },
     {
       name: 'Backend Health',
       status: 'pending',
-      details: 'Checking FitFi backend server status'
+      details: 'Checking FitFi backend server status',
+    },
+    {
+      name: 'Database Connectivity',
+      status: 'pending',
+      details: 'Testing database connection',
+    },
+    {
+      name: 'Redis Connectivity',
+      status: 'pending',
+      details: 'Testing Redis cache connection',
     },
     {
       name: 'Blockchain RPC',
       status: 'pending',
-      details: 'Testing blockchain node connectivity'
+      details: 'Testing blockchain node connectivity',
     },
     {
       name: 'Wallet Connection',
       status: 'pending',
-      details: 'Verifying wallet provider availability'
+      details: 'Verifying wallet auth flow integrity',
     },
     {
-      name: 'Health Connect API',
+      name: 'Backend Diagnostics',
       status: 'pending',
-      details: 'Testing fitness data integration'
+      details: 'Running comprehensive backend tests',
     },
     {
-      name: 'Smart Contract ABI',
+      name: 'Authentication Test',
       status: 'pending',
-      details: 'Validating smart contract interfaces'
-    },
-    {
-      name: 'IPFS Gateway',
-      status: 'pending',
-      details: 'Testing decentralized storage access'
+      details: 'Testing wallet authentication endpoint reachability',
     },
   ]);
 
   const [isRunning, setIsRunning] = useState(false);
   const [currentTestIndex, setCurrentTestIndex] = useState(0);
 
+  // Configuration
+  const BASE_URL = ENV_CONFIG.apiBaseUrl;
+
+  const fetchDiagnostics = async (): Promise<any | null> => {
+    const now = Date.now();
+    if (cachedDiagnostics && now - cachedAt < DIAGNOSTICS_CACHE_TTL) {
+      return cachedDiagnostics;
+    }
+    try {
+      const resp = await fetch(`${BASE_URL}/test/network-diagnostics`);
+      const json = await resp.json();
+      if (resp.status === 200 && json.success) {
+        cachedDiagnostics = json;
+        cachedAt = now;
+        return json;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const extractBackendTest = (
+    data: any,
+    name: string
+  ): BackendTestResult | null => {
+    try {
+      return data?.data?.tests?.find((t: any) => t.name === name) || null;
+    } catch {
+      return null;
+    }
+  };
+
   const runSingleTest = async (index: number): Promise<TestResult> => {
     const test = tests[index];
     const startTime = Date.now();
-    
-    // Update test status to running
-    setTests(prev => prev.map((t, i) => 
-      i === index ? { ...t, status: 'running' } : t
-    ));
 
-    // Simulate test execution
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 2000 + 1000));
-    
-    const duration = Date.now() - startTime;
-    const success = Math.random() > 0.2; // 80% success rate for demo
-    
-    const result: TestResult = {
-      ...test,
-      status: success ? 'passed' : 'failed',
-      duration,
-      message: success 
-        ? getSuccessMessage(test.name)
-        : getFailureMessage(test.name)
-    };
+    // Update test status to running
+    setTests((prev) =>
+      prev.map((t, i) => (i === index ? { ...t, status: 'running' } : t))
+    );
+
+    let result: TestResult;
+
+    try {
+      switch (test.name) {
+        case 'Environment Check':
+          result = await runEnvironmentCheck(test, startTime);
+          break;
+        case 'Network Connectivity':
+          result = await runNetworkConnectivityTest(test, startTime);
+          break;
+        case 'Backend Health':
+          result = await runBackendHealthTest(test, startTime);
+          break;
+        case 'Database Connectivity':
+          result = await runDatabaseTest(test, startTime);
+          break;
+        case 'Redis Connectivity':
+          result = await runRedisTest(test, startTime);
+          break;
+        case 'Blockchain RPC':
+          result = await runBlockchainTest(test, startTime);
+          break;
+        case 'Wallet Connection':
+          result = await runWalletTest(test, startTime);
+          break;
+        case 'Backend Diagnostics':
+          result = await runBackendDiagnostics(test, startTime);
+          break;
+        case 'Authentication Test':
+          result = await runAuthTest(test, startTime);
+          break;
+        default:
+          result = await runGenericTest(test, startTime);
+      }
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      result = {
+        ...test,
+        status: 'failed',
+        duration,
+        message: `Test failed: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
+      };
+    }
 
     return result;
   };
 
-  const getSuccessMessage = (testName: string): string => {
-    const messages: { [key: string]: string } = {
-      'Environment Check': 'Environment configured correctly',
-      'Network Connectivity': 'Connected to internet (WiFi)',
-      'Backend Health': 'Backend server responding (200ms)',
-      'Blockchain RPC': 'Connected to Core testnet',
-      'Wallet Connection': 'MetaMask provider available',
-      'Health Connect API': 'Health data permissions granted',
-      'Smart Contract ABI': 'All contracts verified',
-      'IPFS Gateway': 'IPFS gateway accessible'
-    };
-    return messages[testName] || 'Test passed successfully';
+  const runEnvironmentCheck = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      // Validate environment configuration
+      const envValidation = validateEnvironment();
+      const duration = Date.now() - startTime;
+
+      if (!envValidation.valid) {
+        return {
+          ...test,
+          status: 'failed',
+          duration,
+          message: `Environment validation failed: ${envValidation.errors.length} errors`,
+          details: envValidation.errors.join(', '),
+        };
+      }
+
+      // Check if running in development/production
+      const isDev = __DEV__;
+
+      envLog('info', 'Environment check completed', {
+        isDev,
+        apiBaseUrl: ENV_CONFIG.apiBaseUrl,
+        appEnv: ENV_CONFIG.appEnv,
+      });
+
+      return {
+        ...test,
+        status: 'passed',
+        duration,
+        message: `Environment: ${ENV_CONFIG.appEnv}, API: ${ENV_CONFIG.apiBaseUrl}`,
+        details: 'All environment variables are properly configured',
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Environment check failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
   };
 
-  const getFailureMessage = (testName: string): string => {
-    const messages: { [key: string]: string } = {
-      'Environment Check': 'Missing environment variables',
-      'Network Connectivity': 'Network timeout or DNS failure',
-      'Backend Health': 'Backend server unreachable',
-      'Blockchain RPC': 'RPC endpoint not responding',
-      'Wallet Connection': 'No wallet provider detected',
-      'Health Connect API': 'Health permissions denied',
-      'Smart Contract ABI': 'Contract verification failed',
-      'IPFS Gateway': 'IPFS gateway unreachable'
+  const runNetworkConnectivityTest = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      // Test basic internet connectivity by trying to reach a simple endpoint
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+      const response = await fetch('https://www.google.com', {
+        method: 'HEAD',
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
+      const success = response.status === 200;
+
+      return {
+        ...test,
+        status: success ? 'passed' : 'failed',
+        duration,
+        message: success
+          ? 'Internet connectivity working'
+          : 'No internet connection',
+        details: `HTTP status: ${response.status}`,
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Network connectivity failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  };
+
+  const runBackendHealthTest = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(`${BASE_URL}/test/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const data = await response.json();
+      const duration = Date.now() - startTime;
+      const success = response.status === 200 && data.success;
+
+      return {
+        ...test,
+        status: success ? 'passed' : 'failed',
+        duration,
+        message: success
+          ? data.message || 'Backend is healthy'
+          : 'Backend health check failed',
+        details: success
+          ? `Response time: ${data.data?.responseTime || duration + 'ms'}`
+          : `HTTP ${response.status}`,
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Backend server unreachable',
+        details: error instanceof Error ? error.message : 'Connection failed',
+      };
+    }
+  };
+
+  const runDatabaseTest = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      const diag = await fetchDiagnostics();
+      const duration = Date.now() - startTime;
+      const dbTest = extractBackendTest(diag, 'Database Connectivity');
+      if (dbTest) {
+        return {
+          ...test,
+          status: dbTest.status,
+          duration,
+          message: dbTest.message,
+          details: dbTest.details,
+        };
+      }
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Database test not available',
+        details: 'Missing in diagnostics',
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Database connectivity test failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  };
+
+  const runRedisTest = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      const diag = await fetchDiagnostics();
+      const duration = Date.now() - startTime;
+      const redisTest = extractBackendTest(diag, 'Redis Connectivity');
+      if (redisTest) {
+        return {
+          ...test,
+          status: redisTest.status,
+          duration,
+          message: redisTest.message,
+          details: redisTest.details,
+        };
+      }
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Redis test not available',
+        details: 'Missing in diagnostics',
+      };
+    } catch (e) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Redis connectivity test failed',
+        details: e instanceof Error ? e.message : 'Unknown error',
+      };
+    }
+  };
+
+  const runBlockchainTest = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      const diag = await fetchDiagnostics();
+      const duration = Date.now() - startTime;
+      const bcTest = extractBackendTest(diag, 'Blockchain RPC');
+      if (bcTest) {
+        return {
+          ...test,
+          status: bcTest.status,
+          duration,
+          message: bcTest.message,
+          details: bcTest.details,
+        };
+      }
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Blockchain test not available',
+        details: 'Missing in diagnostics',
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Blockchain RPC test failed',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  };
+
+  const runWalletTest = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      const diag = await fetchDiagnostics();
+      const duration = Date.now() - startTime;
+      const walletTest = extractBackendTest(diag, 'Wallet Connection');
+      if (walletTest) {
+        return {
+          ...test,
+          status: walletTest.status,
+          duration,
+          message: walletTest.message,
+          details: walletTest.details,
+        };
+      }
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Wallet test unavailable',
+        details: 'Missing in diagnostics',
+      };
+    } catch (e) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Wallet test failed',
+        details: e instanceof Error ? e.message : 'Unknown error',
+      };
+    }
+  };
+
+  const runBackendDiagnostics = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      const diag = await fetchDiagnostics();
+      const duration = Date.now() - startTime;
+      if (diag) {
+        const summary = diag.data.summary;
+        return {
+          ...test,
+          status: summary.overallStatus === 'healthy' ? 'passed' : 'failed',
+          duration,
+          message: `Backend diagnostics: ${summary.passedTests}/${summary.totalTests} tests passed`,
+          details: `Overall status: ${summary.overallStatus}`,
+        };
+      }
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Backend diagnostics failed',
+        details: 'No data returned',
+      };
+    } catch (e) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Backend diagnostics unavailable',
+        details: e instanceof Error ? e.message : 'Connection failed',
+      };
+    }
+  };
+
+  const runAuthTest = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    try {
+      // Test if the wallet auth endpoint is reachable (without actually authenticating)
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      const response = await fetch(`${BASE_URL}/auth/wallet-auth`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletAddress: 'test',
+          signature: 'test',
+          message: 'test',
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+      const duration = Date.now() - startTime;
+
+      // We expect this to fail validation, but the endpoint should be reachable
+      const endpointReachable = response.status !== undefined;
+
+      return {
+        ...test,
+        status: endpointReachable ? 'passed' : 'failed',
+        duration,
+        message: endpointReachable
+          ? 'Authentication endpoint is reachable'
+          : 'Authentication endpoint unreachable',
+        details: `HTTP ${response.status} (expected validation error)`,
+      };
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      return {
+        ...test,
+        status: 'failed',
+        duration,
+        message: 'Authentication endpoint test failed',
+        details: error instanceof Error ? error.message : 'Connection failed',
+      };
+    }
+  };
+
+  const runGenericTest = async (
+    test: TestResult,
+    startTime: number
+  ): Promise<TestResult> => {
+    // Simulate test execution
+    await new Promise((resolve) =>
+      setTimeout(resolve, Math.random() * 2000 + 1000)
+    );
+
+    const duration = Date.now() - startTime;
+    const success = Math.random() > 0.3; // 70% success rate for demo
+
+    return {
+      ...test,
+      status: success ? 'passed' : 'failed',
+      duration,
+      message: success ? 'Test completed successfully' : 'Test failed',
     };
-    return messages[testName] || 'Test failed';
   };
 
   const runAllTests = async () => {
     setIsRunning(true);
     setCurrentTestIndex(0);
-    
+
     for (let i = 0; i < tests.length; i++) {
       setCurrentTestIndex(i);
       const result = await runSingleTest(i);
-      
-      setTests(prev => prev.map((t, idx) => 
-        idx === i ? result : t
-      ));
+
+      setTests((prev) => prev.map((t, idx) => (idx === i ? result : t)));
     }
-    
+
     setIsRunning(false);
     setCurrentTestIndex(-1);
   };
 
   const resetTests = () => {
-    setTests(prev => prev.map(test => ({
-      ...test,
-      status: 'pending',
-      duration: undefined,
-      message: undefined
-    })));
+    setTests((prev) =>
+      prev.map((test) => ({
+        ...test,
+        status: 'pending',
+        duration: undefined,
+        message: undefined,
+      }))
+    );
     setCurrentTestIndex(0);
   };
 
   const getStatusIcon = (status: TestResult['status']) => {
     switch (status) {
-      case 'pending': return '⏳';
-      case 'running': return '🔄';
-      case 'passed': return '✅';
-      case 'failed': return '❌';
-      default: return '❓';
+      case 'pending':
+        return '⏳';
+      case 'running':
+        return '🔄';
+      case 'passed':
+        return '✅';
+      case 'failed':
+        return '❌';
+      default:
+        return '❓';
     }
   };
 
   const getStatusColor = (status: TestResult['status']) => {
     switch (status) {
-      case 'pending': return Colors.dark.textMuted;
-      case 'running': return Colors.dark.accent;
-      case 'passed': return Colors.dark.success;
-      case 'failed': return Colors.dark.error;
-      default: return Colors.dark.textMuted;
+      case 'pending':
+        return Colors.dark.textMuted;
+      case 'running':
+        return Colors.dark.accent;
+      case 'passed':
+        return Colors.dark.success;
+      case 'failed':
+        return Colors.dark.error;
+      default:
+        return Colors.dark.textMuted;
     }
   };
 
   const getTotalResults = () => {
-    const passed = tests.filter(t => t.status === 'passed').length;
-    const failed = tests.filter(t => t.status === 'failed').length;
+    const passed = tests.filter((t) => t.status === 'passed').length;
+    const failed = tests.filter((t) => t.status === 'failed').length;
     const total = tests.length;
     return { passed, failed, total };
   };
@@ -188,33 +642,33 @@ export default function NetworkTestScreen() {
         <View style={styles.summarySection}>
           <Text style={styles.summaryTitle}>System Diagnostics</Text>
           <Text style={styles.summaryDescription}>
-            Run comprehensive tests to verify network connectivity, 
-            backend services, and blockchain integration.
+            Run comprehensive tests to verify network connectivity, backend
+            services, and blockchain integration.
           </Text>
-          
+
           {!isRunning && results.total > 0 && (
             <View style={styles.resultsOverview}>
               <Text style={styles.resultsText}>
                 Results: {results.passed} passed, {results.failed} failed
               </Text>
               <View style={styles.resultsBar}>
-                <View 
+                <View
                   style={[
-                    styles.resultsProgress, 
-                    { 
+                    styles.resultsProgress,
+                    {
                       width: `${(results.passed / results.total) * 100}%`,
-                      backgroundColor: Colors.dark.success 
-                    }
-                  ]} 
+                      backgroundColor: Colors.dark.success,
+                    },
+                  ]}
                 />
-                <View 
+                <View
                   style={[
-                    styles.resultsProgress, 
-                    { 
+                    styles.resultsProgress,
+                    {
                       width: `${(results.failed / results.total) * 100}%`,
-                      backgroundColor: Colors.dark.error 
-                    }
-                  ]} 
+                      backgroundColor: Colors.dark.error,
+                    },
+                  ]}
                 />
               </View>
             </View>
@@ -232,7 +686,7 @@ export default function NetworkTestScreen() {
               {isRunning ? 'Running Tests...' : 'Run All Tests'}
             </Text>
           </TouchableOpacity>
-          
+
           {!isRunning && results.total > 0 && (
             <TouchableOpacity
               style={GlobalStyles.buttonSecondary}
@@ -246,45 +700,51 @@ export default function NetworkTestScreen() {
         {/* Test Results */}
         <View style={styles.testsSection}>
           <Text style={styles.testsTitle}>Test Results</Text>
-          
+
           {tests.map((test, index) => (
             <View
               key={index}
               style={[
                 styles.testItem,
-                currentTestIndex === index && isRunning && styles.testItemActive
+                currentTestIndex === index &&
+                  isRunning &&
+                  styles.testItemActive,
               ]}
             >
               <View style={styles.testHeader}>
                 <View style={styles.testTitleSection}>
-                  <Text style={styles.testIcon}>{getStatusIcon(test.status)}</Text>
+                  <Text style={styles.testIcon}>
+                    {getStatusIcon(test.status)}
+                  </Text>
                   <View style={styles.testInfo}>
                     <Text style={styles.testName}>{test.name}</Text>
                     <Text style={styles.testDetails}>{test.details}</Text>
                   </View>
                 </View>
-                
+
                 <View style={styles.testStatus}>
-                  <Text style={[
-                    styles.testStatusText,
-                    { color: getStatusColor(test.status) }
-                  ]}>
+                  <Text
+                    style={[
+                      styles.testStatusText,
+                      { color: getStatusColor(test.status) },
+                    ]}
+                  >
                     {test.status.toUpperCase()}
                   </Text>
                   {test.duration && (
-                    <Text style={styles.testDuration}>
-                      {test.duration}ms
-                    </Text>
+                    <Text style={styles.testDuration}>{test.duration}ms</Text>
                   )}
                 </View>
               </View>
-              
+
               {test.message && (
                 <View style={styles.testMessage}>
-                  <Text style={[
-                    styles.testMessageText,
-                    { color: getStatusColor(test.status) }
-                  ]}>
+                  <Text
+                    style={[
+                      styles.testMessageText,
+                      { color: getStatusColor(test.status) },
+                    ]}
+                  >
                     {test.message}
                   </Text>
                 </View>
@@ -321,7 +781,9 @@ export default function NetworkTestScreen() {
           <View style={styles.techInfo}>
             <Text style={styles.techItem}>Environment: Development</Text>
             <Text style={styles.techItem}>Network: Core Testnet</Text>
-            <Text style={styles.techItem}>RPC Endpoint: https://rpc.test.btcs.network</Text>
+            <Text style={styles.techItem}>
+              RPC Endpoint: https://rpc.test.btcs.network
+            </Text>
             <Text style={styles.techItem}>Backend: fitfi-api.example.com</Text>
             <Text style={styles.techItem}>App Version: 1.0.0 (Build 1234)</Text>
           </View>

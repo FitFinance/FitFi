@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
@@ -14,7 +20,7 @@ export default function HomeScreen() {
     todaySteps: 8420,
     stepGoal: 10000,
     activeDuels: 2,
-    totalEarnings: 1250.50,
+    totalEarnings: 1250.5,
   };
 
   const mockHealthStats = {
@@ -85,29 +91,43 @@ export default function HomeScreen() {
           <View style={[GlobalStyles.card, styles.statsCard]}>
             <Text style={GlobalStyles.heading}>Today&apos;s Progress</Text>
             <View style={styles.stepsContainer}>
-              <Text style={styles.stepsNumber}>{mockUser.todaySteps.toLocaleString()}</Text>
+              <Text style={styles.stepsNumber}>
+                {mockUser.todaySteps.toLocaleString()}
+              </Text>
               <Text style={styles.stepsLabel}>steps today</Text>
               <View style={styles.progressContainer}>
                 <View style={GlobalStyles.progressBar}>
-                  <View style={[GlobalStyles.progressFill, { width: `${Math.min(stepProgress, 100)}%` }]} />
+                  <View
+                    style={[
+                      GlobalStyles.progressFill,
+                      { width: `${Math.min(stepProgress, 100)}%` },
+                    ]}
+                  />
                 </View>
                 <Text style={styles.progressText}>
-                  {Math.round(stepProgress)}% of goal ({mockUser.stepGoal.toLocaleString()})
+                  {Math.round(stepProgress)}% of goal (
+                  {mockUser.stepGoal.toLocaleString()})
                 </Text>
               </View>
             </View>
 
             <View style={styles.healthStatsRow}>
               <View style={styles.healthStat}>
-                <Text style={styles.healthStatNumber}>{mockHealthStats.calories}</Text>
+                <Text style={styles.healthStatNumber}>
+                  {mockHealthStats.calories}
+                </Text>
                 <Text style={styles.healthStatLabel}>Calories</Text>
               </View>
               <View style={styles.healthStat}>
-                <Text style={styles.healthStatNumber}>{mockHealthStats.distance}</Text>
+                <Text style={styles.healthStatNumber}>
+                  {mockHealthStats.distance}
+                </Text>
                 <Text style={styles.healthStatLabel}>km</Text>
               </View>
               <View style={styles.healthStat}>
-                <Text style={styles.healthStatNumber}>{mockHealthStats.activeMinutes}</Text>
+                <Text style={styles.healthStatNumber}>
+                  {mockHealthStats.activeMinutes}
+                </Text>
                 <Text style={styles.healthStatLabel}>Active min</Text>
               </View>
             </View>
@@ -126,11 +146,18 @@ export default function HomeScreen() {
               <View key={challenge.id} style={GlobalStyles.cardSecondary}>
                 <View style={GlobalStyles.rowBetween}>
                   <Text style={styles.challengeTitle}>{challenge.title}</Text>
-                  <Text style={styles.challengeReward}>+{challenge.reward} FF</Text>
+                  <Text style={styles.challengeReward}>
+                    +{challenge.reward} FF
+                  </Text>
                 </View>
                 <View style={styles.challengeProgress}>
                   <View style={GlobalStyles.progressBar}>
-                    <View style={[GlobalStyles.progressFill, { width: `${challenge.progress}%` }]} />
+                    <View
+                      style={[
+                        GlobalStyles.progressFill,
+                        { width: `${challenge.progress}%` },
+                      ]}
+                    />
                   </View>
                   <Text style={styles.challengeProgressText}>
                     {challenge.progress}% • {challenge.timeLeft} left
@@ -144,7 +171,9 @@ export default function HomeScreen() {
           <View style={styles.section}>
             <View style={GlobalStyles.rowBetween}>
               <Text style={GlobalStyles.heading}>Recent Duels</Text>
-              <TouchableOpacity onPress={() => router.push('/(tabs)/active-duels')}>
+              <TouchableOpacity
+                onPress={() => router.push('/(tabs)/active-duels')}
+              >
                 <Text style={styles.viewAll}>View All</Text>
               </TouchableOpacity>
             </View>
@@ -157,27 +186,39 @@ export default function HomeScreen() {
               >
                 <View style={GlobalStyles.rowBetween}>
                   <Text style={styles.duelOpponent}>vs {duel.opponent}</Text>
-                  <View style={[
-                    GlobalStyles.statusBadge,
-                    duel.status === 'won' ? GlobalStyles.statusCompleted :
-                    duel.status === 'active' ? GlobalStyles.statusActive : GlobalStyles.statusPending
-                  ]}>
+                  <View
+                    style={[
+                      GlobalStyles.statusBadge,
+                      duel.status === 'won'
+                        ? GlobalStyles.statusCompleted
+                        : duel.status === 'active'
+                        ? GlobalStyles.statusActive
+                        : GlobalStyles.statusPending,
+                    ]}
+                  >
                     <Text style={styles.statusText}>{duel.status}</Text>
                   </View>
                 </View>
 
                 {duel.status === 'won' ? (
                   <View style={styles.duelResult}>
-                    <Text style={styles.duelSteps}>{duel.steps.toLocaleString()} steps</Text>
-                    <Text style={styles.duelReward}>+{duel.reward} FF earned</Text>
+                    <Text style={styles.duelSteps}>
+                      {duel.steps.toLocaleString()} steps
+                    </Text>
+                    <Text style={styles.duelReward}>
+                      +{duel.reward} FF earned
+                    </Text>
                     <Text style={styles.duelTime}>{duel.date}</Text>
                   </View>
                 ) : (
                   <View style={styles.duelActive}>
                     <Text style={styles.duelSteps}>
-                      You: {duel.mySteps.toLocaleString()} • Them: {duel.theirSteps.toLocaleString()}
+                      You: {duel.mySteps.toLocaleString()} • Them:{' '}
+                      {duel.theirSteps.toLocaleString()}
                     </Text>
-                    <Text style={styles.duelTime}>{duel.timeLeft} remaining</Text>
+                    <Text style={styles.duelTime}>
+                      {duel.timeLeft} remaining
+                    </Text>
                   </View>
                 )}
               </TouchableOpacity>
@@ -192,7 +233,7 @@ export default function HomeScreen() {
                 <Text style={styles.actionButtonIcon}>🏃</Text>
                 <Text style={styles.actionButtonText}>Find Opponents</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.actionButton}
                 onPress={() => router.push('/challenges')}
               >

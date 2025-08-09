@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
@@ -51,7 +57,7 @@ export default function ConnectWalletScreen() {
             >
               <Text style={styles.backButtonText}>← Back</Text>
             </TouchableOpacity>
-            
+
             <View style={styles.titleContainer}>
               <Text style={GlobalStyles.title}>Connect Wallet</Text>
               <Text style={styles.subtitle}>
@@ -72,7 +78,9 @@ export default function ConnectWalletScreen() {
                 </View>
                 <View style={styles.walletInfo}>
                   <Text style={styles.walletName}>{wallet.name}</Text>
-                  <Text style={styles.walletDescription}>{wallet.description}</Text>
+                  <Text style={styles.walletDescription}>
+                    {wallet.description}
+                  </Text>
                 </View>
                 <Text style={styles.arrow}>→</Text>
               </TouchableOpacity>
@@ -83,10 +91,9 @@ export default function ConnectWalletScreen() {
             <View style={styles.infoBox}>
               <Text style={styles.infoTitle}>Why connect a wallet?</Text>
               <Text style={styles.infoText}>
-                • Secure authentication without passwords{'\n'}
-                • Earn and manage your FitFi tokens{'\n'}
-                • Participate in challenges and duels{'\n'}
-                • Track your fitness achievements on-chain
+                • Secure authentication without passwords{'\n'}• Earn and manage
+                your FitFi tokens{'\n'}• Participate in challenges and duels
+                {'\n'}• Track your fitness achievements on-chain
               </Text>
             </View>
 
@@ -94,7 +101,9 @@ export default function ConnectWalletScreen() {
               style={[GlobalStyles.buttonSecondary, styles.loginButton]}
               onPress={() => router.push('/login')}
             >
-              <Text style={GlobalStyles.buttonText}>Login with OTP Instead</Text>
+              <Text style={GlobalStyles.buttonText}>
+                Login with OTP Instead
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

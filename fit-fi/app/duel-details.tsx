@@ -1,5 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
 
@@ -25,7 +32,11 @@ export default function DuelDetailsScreen() {
         startTime: '2024-01-15 08:00',
         endTime: previous ? '2024-01-16 08:00' : '2024-01-16 08:00',
         description: 'Who can walk more steps in 24 hours?',
-        rules: ['Track steps automatically', 'No manual logging', 'Winner takes all'],
+        rules: [
+          'Track steps automatically',
+          'No manual logging',
+          'Winner takes all',
+        ],
       },
       '2': {
         id: '2',
@@ -42,7 +53,11 @@ export default function DuelDetailsScreen() {
         startTime: '2024-01-14 06:00',
         endTime: previous ? '2024-01-14 18:00' : '2024-01-15 18:00',
         description: 'Early bird gets the worm - morning fitness challenge',
-        rules: ['6 AM to 6 PM only', 'Steps tracked automatically', 'Bonus for early start'],
+        rules: [
+          '6 AM to 6 PM only',
+          'Steps tracked automatically',
+          'Bonus for early start',
+        ],
       },
     };
     return duels[id as keyof typeof duels] || duels['1'];
@@ -53,26 +68,37 @@ export default function DuelDetailsScreen() {
   const getStatusColor = (status: string, outcome?: string | null) => {
     if (status === 'completed') {
       switch (outcome) {
-        case 'won': return Colors.dark.success;
-        case 'lost': return Colors.dark.error;
-        case 'tied': return Colors.dark.warning;
-        default: return Colors.dark.textMuted;
+        case 'won':
+          return Colors.dark.success;
+        case 'lost':
+          return Colors.dark.error;
+        case 'tied':
+          return Colors.dark.warning;
+        default:
+          return Colors.dark.textMuted;
       }
     }
     switch (status) {
-      case 'active': return Colors.dark.success;
-      case 'pending': return Colors.dark.warning;
-      default: return Colors.dark.textMuted;
+      case 'active':
+        return Colors.dark.success;
+      case 'pending':
+        return Colors.dark.warning;
+      default:
+        return Colors.dark.textMuted;
     }
   };
 
   const getStatusText = (status: string, outcome?: string | null) => {
     if (status === 'completed') {
       switch (outcome) {
-        case 'won': return 'WON 🏆';
-        case 'lost': return 'LOST 😞';
-        case 'tied': return 'TIED 🤝';
-        default: return 'COMPLETED';
+        case 'won':
+          return 'WON 🏆';
+        case 'lost':
+          return 'LOST 😞';
+        case 'tied':
+          return 'TIED 🤝';
+        default:
+          return 'COMPLETED';
       }
     }
     return status.toUpperCase();
@@ -87,22 +113,31 @@ export default function DuelDetailsScreen() {
   };
 
   const handleViewOpponentProfile = () => {
-    Alert.alert('View Profile', 'Opponent profile viewing will be implemented soon!');
+    Alert.alert(
+      'View Profile',
+      'Opponent profile viewing will be implemented soon!'
+    );
   };
 
   const calculateStepDifference = () => {
     const diff = Math.abs(duel.mySteps - duel.theirSteps);
     const leader = duel.mySteps > duel.theirSteps ? 'You' : duel.opponent;
     const isWinning = duel.mySteps > duel.theirSteps;
-    
+
     if (duel.mySteps === duel.theirSteps) {
-      return { text: "It's a perfect tie!", color: Colors.dark.warning, isWinning: false };
+      return {
+        text: "It's a perfect tie!",
+        color: Colors.dark.warning,
+        isWinning: false,
+      };
     }
-    
+
     return {
-      text: `${leader} ${isWinning ? 'lead' : 'leads'} by ${diff.toLocaleString()} steps`,
+      text: `${leader} ${
+        isWinning ? 'lead' : 'leads'
+      } by ${diff.toLocaleString()} steps`,
       color: isWinning ? Colors.dark.success : Colors.dark.error,
-      isWinning
+      isWinning,
     };
   };
 
@@ -128,9 +163,16 @@ export default function DuelDetailsScreen() {
             <Text style={styles.challengeType}>{duel.challengeType}</Text>
             <Text style={styles.description}>{duel.description}</Text>
           </View>
-          
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(duel.status, duel.outcome) }]}>
-            <Text style={styles.statusText}>{getStatusText(duel.status, duel.outcome)}</Text>
+
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(duel.status, duel.outcome) },
+            ]}
+          >
+            <Text style={styles.statusText}>
+              {getStatusText(duel.status, duel.outcome)}
+            </Text>
           </View>
         </View>
 
@@ -142,7 +184,10 @@ export default function DuelDetailsScreen() {
           <View style={styles.opponentInfo}>
             <View style={styles.opponentAvatar}>
               <Text style={styles.opponentAvatarText}>
-                {duel.opponent.split(' ').map(n => n[0]).join('')}
+                {duel.opponent
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')}
               </Text>
             </View>
             <View style={styles.opponentDetails}>
@@ -183,32 +228,46 @@ export default function DuelDetailsScreen() {
           <Text style={styles.sectionTitle}>
             {duel.status === 'completed' ? 'Final Results' : 'Current Progress'}
           </Text>
-          
+
           <View style={styles.stepsComparison}>
             <View style={styles.playerSide}>
               <Text style={styles.playerLabel}>You</Text>
-              <Text style={[
-                styles.stepsNumber,
-                { color: duel.mySteps >= duel.theirSteps ? Colors.dark.success : Colors.dark.text }
-              ]}>
+              <Text
+                style={[
+                  styles.stepsNumber,
+                  {
+                    color:
+                      duel.mySteps >= duel.theirSteps
+                        ? Colors.dark.success
+                        : Colors.dark.text,
+                  },
+                ]}
+              >
                 {duel.mySteps.toLocaleString()}
               </Text>
               <Text style={styles.stepsLabel}>steps</Text>
             </View>
-            
+
             <View style={styles.vsSection}>
               <Text style={styles.vsText}>VS</Text>
               <Text style={[styles.differenceText, { color: stepDiff.color }]}>
                 {stepDiff.text}
               </Text>
             </View>
-            
+
             <View style={styles.playerSide}>
               <Text style={styles.playerLabel}>Opponent</Text>
-              <Text style={[
-                styles.stepsNumber,
-                { color: duel.theirSteps > duel.mySteps ? Colors.dark.error : Colors.dark.text }
-              ]}>
+              <Text
+                style={[
+                  styles.stepsNumber,
+                  {
+                    color:
+                      duel.theirSteps > duel.mySteps
+                        ? Colors.dark.error
+                        : Colors.dark.text,
+                  },
+                ]}
+              >
                 {duel.theirSteps.toLocaleString()}
               </Text>
               <Text style={styles.stepsLabel}>steps</Text>
@@ -219,10 +278,17 @@ export default function DuelDetailsScreen() {
             <Text style={styles.timeLabel}>
               {duel.status === 'completed' ? 'Completed' : 'Time Remaining'}
             </Text>
-            <Text style={[
-              styles.timeValue,
-              { color: duel.status === 'completed' ? Colors.dark.textSecondary : Colors.dark.warning }
-            ]}>
+            <Text
+              style={[
+                styles.timeValue,
+                {
+                  color:
+                    duel.status === 'completed'
+                      ? Colors.dark.textSecondary
+                      : Colors.dark.warning,
+                },
+              ]}
+            >
               {duel.timeLeft}
             </Text>
           </View>
@@ -243,19 +309,25 @@ export default function DuelDetailsScreen() {
         {duel.status === 'completed' ? (
           <View style={styles.resultSection}>
             <Text style={styles.sectionTitle}>Final Result</Text>
-            <View style={[
-              styles.resultCard,
-              { backgroundColor: getStatusColor(duel.status, duel.outcome) }
-            ]}>
+            <View
+              style={[
+                styles.resultCard,
+                { backgroundColor: getStatusColor(duel.status, duel.outcome) },
+              ]}
+            >
               <Text style={styles.resultTitle}>
-                {duel.outcome === 'won' ? 'Congratulations! 🎉' : 
-                 duel.outcome === 'lost' ? 'Better luck next time!' : 
-                 'Great effort! 🤝'}
+                {duel.outcome === 'won'
+                  ? 'Congratulations! 🎉'
+                  : duel.outcome === 'lost'
+                  ? 'Better luck next time!'
+                  : 'Great effort! 🤝'}
               </Text>
               <Text style={styles.resultSubtitle}>
-                {duel.outcome === 'won' ? `You earned ${duel.reward} FF` :
-                 duel.outcome === 'lost' ? `You lost ${duel.stake} FF` :
-                 `Your ${duel.stake} FF stake was returned`}
+                {duel.outcome === 'won'
+                  ? `You earned ${duel.reward} FF`
+                  : duel.outcome === 'lost'
+                  ? `You lost ${duel.stake} FF`
+                  : `Your ${duel.stake} FF stake was returned`}
               </Text>
             </View>
           </View>
@@ -267,7 +339,8 @@ export default function DuelDetailsScreen() {
                 Winner gets: {duel.stake * 2} FF
               </Text>
               <Text style={styles.rewardDescription}>
-                Winner takes both stakes (your {duel.stake} FF + opponent&apos;s {duel.stake} FF)
+                Winner takes both stakes (your {duel.stake} FF + opponent&apos;s{' '}
+                {duel.stake} FF)
               </Text>
             </View>
           </View>
@@ -278,11 +351,15 @@ export default function DuelDetailsScreen() {
           <View style={styles.actionSection}>
             <TouchableOpacity
               style={[GlobalStyles.button, styles.monitorButton]}
-              onPress={() => router.push(`/duel-health-monitor?duelId=${duel.id}`)}
+              onPress={() =>
+                router.push(`/duel-health-monitor?duelId=${duel.id}`)
+              }
             >
-              <Text style={GlobalStyles.buttonTextPrimary}>Monitor Live Progress</Text>
+              <Text style={GlobalStyles.buttonTextPrimary}>
+                Monitor Live Progress
+              </Text>
             </TouchableOpacity>
-            
+
             <View style={styles.actionButtonsRow}>
               <TouchableOpacity
                 style={[GlobalStyles.buttonSecondary, styles.actionButton]}
@@ -290,7 +367,7 @@ export default function DuelDetailsScreen() {
               >
                 <Text style={GlobalStyles.buttonText}>Share 📤</Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[GlobalStyles.buttonSecondary, styles.actionButton]}
                 onPress={handleMotivate}

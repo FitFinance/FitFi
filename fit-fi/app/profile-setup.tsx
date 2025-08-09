@@ -1,5 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, SafeAreaView } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+  ScrollView,
+  SafeAreaView,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
@@ -19,7 +27,7 @@ export default function ProfileSetupScreen() {
     try {
       setIsLoading(true);
       const response = await updateProfile(name.trim());
-      
+
       if (response.success) {
         Alert.alert(
           'Welcome to FitFi!',
@@ -54,9 +62,9 @@ export default function ProfileSetupScreen() {
       'You can always update your profile later from the settings.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
+        {
           text: 'Skip',
-          onPress: () => router.replace('/(tabs)/home')
+          onPress: () => router.replace('/(tabs)/home'),
         },
       ]
     );
@@ -72,7 +80,9 @@ export default function ProfileSetupScreen() {
                 <Text style={styles.logoText}>👋</Text>
               </View>
               <Text style={styles.title}>Welcome to FitFi!</Text>
-              <Text style={styles.subtitle}>Let&apos;s set up your profile</Text>
+              <Text style={styles.subtitle}>
+                Let&apos;s set up your profile
+              </Text>
             </View>
           </View>
 
@@ -88,14 +98,15 @@ export default function ProfileSetupScreen() {
                 style={[GlobalStyles.input, styles.input]}
                 value={name}
                 onChangeText={setName}
-                placeholder="Enter your name or nickname"
+                placeholder='Enter your name or nickname'
                 placeholderTextColor={Colors.dark.textMuted}
-                autoCapitalize="words"
+                autoCapitalize='words'
                 autoCorrect={false}
                 maxLength={50}
               />
               <Text style={styles.helperText}>
-                This is how you&apos;ll appear to other users in challenges and leaderboards.
+                This is how you&apos;ll appear to other users in challenges and
+                leaderboards.
               </Text>
             </View>
 
@@ -119,8 +130,9 @@ export default function ProfileSetupScreen() {
             <View style={styles.infoSection}>
               <Text style={styles.infoTitle}>Privacy Note</Text>
               <Text style={styles.infoText}>
-                Your wallet address is used for authentication and blockchain transactions. 
-                Your display name is only used within the app and can be changed anytime.
+                Your wallet address is used for authentication and blockchain
+                transactions. Your display name is only used within the app and
+                can be changed anytime.
               </Text>
             </View>
           </View>

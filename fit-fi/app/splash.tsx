@@ -32,14 +32,14 @@ export default function SplashScreen() {
         <Text style={styles.appName}>FitFi</Text>
         <Text style={styles.tagline}>Earn by staying fit</Text>
       </View>
-      
+
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={Colors.dark.primary} />
+        <ActivityIndicator size='large' color={Colors.dark.primary} />
         <Text style={styles.loadingText}>
           {isLoading ? 'Checking authentication...' : 'Loading...'}
         </Text>
       </View>
-      
+
       <View style={styles.footer}>
         <Text style={styles.version}>Version 1.0.0</Text>
       </View>

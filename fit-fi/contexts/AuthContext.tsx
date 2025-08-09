@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from 'react';
 import WalletService, { User, AuthResponse } from '../services/WalletService';
 
 interface AuthContextType {
@@ -30,12 +36,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       setIsLoading(true);
-      const { user: storedUser, token } = await WalletService.getStoredAuthData();
-      
+      const { user: storedUser, token } =
+        await WalletService.getStoredAuthData();
+
       if (storedUser && token) {
         setUser(storedUser);
         setIsAuthenticated(true);
-        
+
         // Optionally refresh profile from server
         try {
           const response = await WalletService.getUserProfile();
@@ -57,12 +64,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       const response = await WalletService.connectWallet();
-      
+
       if (response.success && response.data) {
         setUser(response.data.user);
         setIsAuthenticated(true);
       }
-      
+
       return response;
     } catch (error) {
       console.error('Error connecting wallet:', error);
@@ -71,7 +78,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         message: 'Failed to connect wallet',
         details: {
           title: 'Connection Error',
-          description: 'An unexpected error occurred while connecting your wallet.',
+          description:
+            'An unexpected error occurred while connecting your wallet.',
         },
       };
     } finally {
@@ -82,11 +90,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const updateProfile = async (name: string): Promise<AuthResponse> => {
     try {
       const response = await WalletService.updateProfile(name);
-      
+
       if (response.success && response.data) {
         setUser(response.data.user);
       }
-      
+
       return response;
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -95,7 +103,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         message: 'Failed to update profile',
         details: {
           title: 'Update Error',
-          description: 'An unexpected error occurred while updating your profile.',
+          description:
+            'An unexpected error occurred while updating your profile.',
         },
       };
     }
@@ -132,11 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     refreshProfile,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

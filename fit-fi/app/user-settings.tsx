@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Alert, TextInput, Modal } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Alert,
+  TextInput,
+  Modal,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/contexts/AuthContext';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
@@ -16,7 +25,7 @@ export default function UserSettingsScreen() {
     level: 12,
     experience: 8450,
     nextLevelExp: 10000,
-    totalEarnings: 1250.50,
+    totalEarnings: 1250.5,
     joinedDate: 'January 2024',
     totalSteps: 1452300,
     totalChallenges: 48,
@@ -40,7 +49,7 @@ export default function UserSettingsScreen() {
     try {
       setIsUpdating(true);
       const response = await updateProfile(editName.trim());
-      
+
       if (response.success) {
         setIsEditModalVisible(false);
         Alert.alert('Success', 'Profile updated successfully');
@@ -64,13 +73,13 @@ export default function UserSettingsScreen() {
       'Are you sure you want to logout? You will need to reconnect your wallet to access the app.',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
+        {
           text: 'Logout',
           style: 'destructive',
           onPress: async () => {
             await logout();
             router.replace('/login');
-          }
+          },
         },
       ]
     );
@@ -78,7 +87,15 @@ export default function UserSettingsScreen() {
 
   const expProgress = (mockStats.experience / mockStats.nextLevelExp) * 100;
 
-  const StatCard = ({ title, value, subtitle }: { title: string; value: string | number; subtitle?: string }) => (
+  const StatCard = ({
+    title,
+    value,
+    subtitle,
+  }: {
+    title: string;
+    value: string | number;
+    subtitle?: string;
+  }) => (
     <View style={styles.statCard}>
       <Text style={styles.statValue}>{value}</Text>
       <Text style={styles.statTitle}>{title}</Text>
@@ -96,10 +113,7 @@ export default function UserSettingsScreen() {
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={GlobalStyles.title}>Profile</Text>
-        <TouchableOpacity
-          style={styles.logoutButton}
-          onPress={handleLogout}
-        >
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
@@ -117,15 +131,17 @@ export default function UserSettingsScreen() {
               <Text style={styles.levelText}>{mockStats.level}</Text>
             </View>
           </View>
-          
+
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{user?.name || 'Anonymous'}</Text>
             <Text style={styles.profileRole}>Role: {user?.role || 'User'}</Text>
             <Text style={styles.profileAddress}>
-              {user?.walletAddress ? 
-                `${user.walletAddress.slice(0, 6)}...${user.walletAddress.slice(-4)}` :
-                'No wallet connected'
-              }
+              {user?.walletAddress
+                ? `${user.walletAddress.slice(
+                    0,
+                    6
+                  )}...${user.walletAddress.slice(-4)}`
+                : 'No wallet connected'}
             </Text>
             <Text style={styles.joinedDate}>Joined {mockStats.joinedDate}</Text>
           </View>
@@ -134,10 +150,16 @@ export default function UserSettingsScreen() {
             <Text style={styles.experienceTitle}>Level Progress</Text>
             <View style={styles.experienceBar}>
               <View style={GlobalStyles.progressBar}>
-                <View style={[GlobalStyles.progressFill, { width: `${expProgress}%` }]} />
+                <View
+                  style={[
+                    GlobalStyles.progressFill,
+                    { width: `${expProgress}%` },
+                  ]}
+                />
               </View>
               <Text style={styles.experienceText}>
-                {mockStats.experience.toLocaleString()} / {mockStats.nextLevelExp.toLocaleString()} XP
+                {mockStats.experience.toLocaleString()} /{' '}
+                {mockStats.nextLevelExp.toLocaleString()} XP
               </Text>
             </View>
           </View>
@@ -151,9 +173,7 @@ export default function UserSettingsScreen() {
             <Text style={styles.walletAddress}>
               {user?.walletAddress || 'No wallet connected'}
             </Text>
-            <Text style={styles.walletNote}>
-              🦊 Authenticated via MetaMask
-            </Text>
+            <Text style={styles.walletNote}>🦊 Authenticated via MetaMask</Text>
           </View>
         </View>
 
@@ -162,34 +182,34 @@ export default function UserSettingsScreen() {
           <Text style={styles.sectionTitle}>Statistics</Text>
           <View style={styles.statsGrid}>
             <StatCard
-              title="Total Steps"
+              title='Total Steps'
               value={mockStats.totalSteps.toLocaleString()}
-              subtitle="All time"
+              subtitle='All time'
             />
             <StatCard
-              title="Challenges"
+              title='Challenges'
               value={mockStats.totalChallenges}
-              subtitle="Completed"
+              subtitle='Completed'
             />
             <StatCard
-              title="Win Rate"
+              title='Win Rate'
               value={`${mockStats.winRate}%`}
               subtitle={`${mockStats.challengesWon}/${mockStats.totalChallenges}`}
             />
             <StatCard
-              title="Current Streak"
+              title='Current Streak'
               value={mockStats.currentStreak}
-              subtitle="days"
+              subtitle='days'
             />
             <StatCard
-              title="Total Earnings"
+              title='Total Earnings'
               value={`${mockStats.totalEarnings} FF`}
-              subtitle="Lifetime"
+              subtitle='Lifetime'
             />
             <StatCard
-              title="Longest Streak"
+              title='Longest Streak'
               value={mockStats.longestStreak}
-              subtitle="days"
+              subtitle='days'
             />
           </View>
         </View>
@@ -198,7 +218,7 @@ export default function UserSettingsScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Profile Actions</Text>
           <View style={styles.actionButtons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={GlobalStyles.button}
               onPress={handleEditProfile}
             >
@@ -210,11 +230,18 @@ export default function UserSettingsScreen() {
             <TouchableOpacity style={GlobalStyles.buttonSecondary}>
               <Text style={GlobalStyles.buttonText}>Share Profile</Text>
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={[GlobalStyles.buttonSecondary, { borderColor: Colors.dark.error, borderWidth: 1 }]}
+            <TouchableOpacity
+              style={[
+                GlobalStyles.buttonSecondary,
+                { borderColor: Colors.dark.error, borderWidth: 1 },
+              ]}
               onPress={handleLogout}
             >
-              <Text style={[GlobalStyles.buttonText, { color: Colors.dark.error }]}>Disconnect Wallet</Text>
+              <Text
+                style={[GlobalStyles.buttonText, { color: Colors.dark.error }]}
+              >
+                Disconnect Wallet
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -224,20 +251,20 @@ export default function UserSettingsScreen() {
       <Modal
         visible={isEditModalVisible}
         transparent={true}
-        animationType="slide"
+        animationType='slide'
         onRequestClose={() => setIsEditModalVisible(false)}
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Edit Profile</Text>
-            
+
             <View style={styles.modalForm}>
               <Text style={styles.modalLabel}>Display Name</Text>
               <TextInput
                 style={GlobalStyles.input}
                 value={editName}
                 onChangeText={setEditName}
-                placeholder="Enter your name"
+                placeholder='Enter your name'
                 placeholderTextColor={Colors.dark.textMuted}
                 maxLength={50}
               />
@@ -248,13 +275,20 @@ export default function UserSettingsScreen() {
 
             <View style={styles.modalButtons}>
               <TouchableOpacity
-                style={[GlobalStyles.buttonSecondary, { flex: 1, marginRight: 8 }]}
+                style={[
+                  GlobalStyles.buttonSecondary,
+                  { flex: 1, marginRight: 8 },
+                ]}
                 onPress={() => setIsEditModalVisible(false)}
               >
                 <Text style={GlobalStyles.buttonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[GlobalStyles.button, { flex: 1, marginLeft: 8 }, isUpdating && styles.buttonDisabled]}
+                style={[
+                  GlobalStyles.button,
+                  { flex: 1, marginLeft: 8 },
+                  isUpdating && styles.buttonDisabled,
+                ]}
                 onPress={handleSaveProfile}
                 disabled={isUpdating}
               >

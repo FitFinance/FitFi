@@ -25,7 +25,7 @@ export const Colors = {
       accent: ['#2196F3', '#1976D2'],
       dark: ['#1A1A1A', '#0A0A0A'],
     },
-  }
+  },
 };
 
 export const GlobalStyles = StyleSheet.create({
@@ -47,7 +47,7 @@ export const GlobalStyles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: Colors.dark.background,
   },
-  
+
   // Card Styles
   card: {
     backgroundColor: Colors.dark.surface,
@@ -69,7 +69,7 @@ export const GlobalStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.dark.border,
   },
-  
+
   // Text Styles
   title: {
     fontSize: 28,
@@ -104,7 +104,7 @@ export const GlobalStyles = StyleSheet.create({
     color: Colors.dark.textMuted,
     lineHeight: 18,
   },
-  
+
   // Button Styles
   button: {
     backgroundColor: Colors.dark.primary,
@@ -136,7 +136,7 @@ export const GlobalStyles = StyleSheet.create({
     fontWeight: '600',
     color: '#FFFFFF',
   },
-  
+
   // Input Styles
   input: {
     backgroundColor: Colors.dark.surface,
@@ -152,7 +152,7 @@ export const GlobalStyles = StyleSheet.create({
   inputFocused: {
     borderColor: Colors.dark.primary,
   },
-  
+
   // Layout Styles
   row: {
     flexDirection: 'row',
@@ -166,7 +166,7 @@ export const GlobalStyles = StyleSheet.create({
   column: {
     flexDirection: 'column',
   },
-  
+
   // Spacing
   margin8: { margin: 8 },
   margin16: { margin: 16 },
@@ -176,7 +176,7 @@ export const GlobalStyles = StyleSheet.create({
   marginTop16: { marginTop: 16 },
   marginBottom8: { marginBottom: 8 },
   marginBottom16: { marginBottom: 16 },
-  
+
   // Status Styles
   statusBadge: {
     paddingVertical: 4,
@@ -196,7 +196,7 @@ export const GlobalStyles = StyleSheet.create({
   statusError: {
     backgroundColor: Colors.dark.error,
   },
-  
+
   // Progress Styles
   progressBar: {
     height: 8,
@@ -209,7 +209,7 @@ export const GlobalStyles = StyleSheet.create({
     backgroundColor: Colors.dark.primary,
     borderRadius: 4,
   },
-  
+
   // Header Styles
   header: {
     backgroundColor: Colors.dark.surface,
@@ -223,7 +223,7 @@ export const GlobalStyles = StyleSheet.create({
     fontWeight: 'bold',
     color: Colors.dark.text,
   },
-  
+
   // List Styles
   listItem: {
     backgroundColor: Colors.dark.surface,
@@ -232,7 +232,7 @@ export const GlobalStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.dark.border,
   },
-  
+
   // Modal Styles
   modal: {
     backgroundColor: Colors.dark.background,
@@ -245,7 +245,7 @@ export const GlobalStyles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  
+
   // Empty State Styles
   emptyState: {
     flex: 1,
