@@ -30,14 +30,3 @@ export const debugLog = (...args: any[]) => {
 };
 
 export default ENV;
-
-/**
- * Debug logger that only logs in development mode
- */
-export const debugLog = (...args: any[]) => {
-  if (ENV.DEBUG_MODE) {
-    console.log('[FitFi Debug]:', ...args);
-  }
-};
-
-export default ENV;

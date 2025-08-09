@@ -13,6 +13,12 @@ type SignResult = {
   chainId: string; // e.g., 'eip155:1'
 };
 
+type WalletConnectionResult = {
+  address: string;
+  signature: string;
+  message: string;
+};
+
 export class WalletConnectService {
   private static client: SignClient | null = null;
   private static session: SessionTypes.Struct | null = null;

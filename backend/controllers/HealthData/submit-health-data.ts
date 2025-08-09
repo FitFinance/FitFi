@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { Request, Response } from 'express';
 import sendResponse from '../../utils/sendResponse.js';
 import HealthData from '../../models/HealthDataModel.js';

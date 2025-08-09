@@ -35,7 +35,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Log all incoming requests
-app.use((req: Request, res: Response, next: NextFunction) => {
+app.use((req: Request, _res: Response, next: NextFunction) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
 });

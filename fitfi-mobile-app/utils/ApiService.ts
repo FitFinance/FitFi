@@ -185,6 +185,25 @@ class ApiService {
     });
   }
 
+  // New simplified wallet authentication
+  async authenticateWithWallet(
+    walletAddress: string,
+    signature: string,
+    message: string
+  ): Promise<
+    ApiResponse<{
+      token: string;
+      walletAddress: string;
+      nonce: number;
+      isNewUser: boolean;
+    }>
+  > {
+    return this.makeRequest('/auth/wallet-auth', {
+      method: 'POST',
+      body: JSON.stringify({ walletAddress, signature, message }),
+    });
+  }
+
   // OTP signup flow
   async requestOtp(
     walletAddress: string

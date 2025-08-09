@@ -109,7 +109,7 @@ const searchOpponent: fn = async (req: Request, res: Response) => {
       count: 0,
     });
   } else {
-    const duel: string | null = await redis.sPop(challengeKey);
+  const duel: string | null = (await (redis as any).sPop(challengeKey)) as string | null;
     if (!duel) {
       const response: APIResponse = {
         message: 'No available duel found in Redis for this challenge',

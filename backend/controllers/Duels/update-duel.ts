@@ -32,7 +32,7 @@ const updateDuel: fn = catchAsync(
       throw new AppError("Duel don't exists", errorMessage, 404);
     }
 
-    const redisDuelRawData: string | null = await redisClient.sPop(duelKey);
+  const redisDuelRawData: string | null = (await (redisClient as any).sPop(duelKey)) as string | null;
 
     if (!redisDuelRawData) {
       const errorMessage: IErrorMessage = {

@@ -47,6 +47,14 @@
           "data": {
             "scheme": "wc"
           }
+        },
+        {
+          "action": "VIEW",
+          "category": ["DEFAULT", "BROWSABLE"],
+          "data": {
+            "scheme": "https",
+            "host": "fitfi.app"
+          }
         }
       ]
     },

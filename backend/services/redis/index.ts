@@ -13,10 +13,10 @@ async function getRedisClient(): Promise<RedisClientType<any, any>> {
     chalk.blue('Attempting connection to Redis')
   );
 
-  redisClient = createClient({
-    url: process.env.REDIS_URI,
-    password: process.env.REDIS_PASS,
-  });
+  redisClient = await createClient();
+  // {
+  // url: process.env.REDIS_URI,
+  // password: process.env.REDIS_PASS  // }
 
   // Handle connection errors
   redisClient.on('error', (err: any) => {

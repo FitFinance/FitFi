@@ -25,9 +25,10 @@ export default function LoginScreen() {
   // State management
   const [loading, setLoading] = useState(false);
   const [walletAddress, setWalletAddress] = useState('');
-  const [nonce, setNonce] = useState<number | null>(null);
+  // Nonce state no longer used in OTP-only flow
   const [otp, setOtp] = useState<string>('');
   const [txHash, setTxHash] = useState<string | null>(null);
+  const [devOtp, setDevOtp] = useState<string | null>(null);
   const [step, setStep] = useState<'input' | 'processing' | 'otp'>('input');
 
   useEffect(() => {
@@ -67,41 +68,17 @@ export default function LoginScreen() {
         walletAddress
       );
 
-      // Step 1: Request OTP or detect existing user
+      // Step 1: Request OTP (works for both new and existing users)
       const otpResp = await apiService.requestOtp(walletAddress);
       if (!otpResp.success) {
         Alert.alert('Error', otpResp.message || 'Failed to request OTP');
         setStep('input');
         return;
       }
-
-      if (!otpResp.data?.exists) {
-        // New user flow: show OTP entry UI
-        setTxHash(otpResp.data?.txHash || null);
-        setStep('otp');
-        return;
-      }
-
-      // Existing user: fall back to signature flow
-      console.log('👤 Existing user detected. Proceeding with signature flow.');
-
-      const nonceResp = await apiService.requestNonce(walletAddress);
-      if (!nonceResp.success || !nonceResp.data?.nonce) {
-        Alert.alert('Error', nonceResp.message || 'Failed to get nonce');
-        setStep('input');
-        return;
-      }
-      const receivedNonce = nonceResp.data.nonce;
-      setNonce(receivedNonce);
-
-      const message = `Welcome to FitFi!\n\nSign this message to verify your identity.\n\nNonce: ${receivedNonce}`;
-      console.log('📝 Message to sign:', message);
-
-      if (typeof window !== 'undefined' && (window as any).ethereum) {
-        await handleWebWalletSigning(message, receivedNonce);
-      } else {
-        await handleWalletConnectSigning(message, receivedNonce);
-      }
+      // Show OTP entry UI (for both new and existing users)
+      setTxHash(otpResp.data?.txHash || null);
+      setDevOtp((otpResp.data as any)?.devOtp || null);
+      setStep('otp');
     } catch (error) {
       console.error('❌ Wallet connection error:', error);
       Alert.alert('Error', 'Failed to connect wallet. Please try again.');
@@ -144,74 +121,7 @@ export default function LoginScreen() {
     }
   };
 
-  const handleWebWalletSigning = async (
-    message: string,
-    nonceValue: number
-  ) => {
-    try {
-      console.log('🌐 Web: Requesting signature from MetaMask...');
-
-      const ethereum = (window as any).ethereum;
-
-      // Request accounts first
-      const accounts = await ethereum.request({
-        method: 'eth_requestAccounts',
-      });
-
-      if (!accounts || accounts.length === 0) {
-        throw new Error('No accounts found. Please connect your wallet.');
-      }
-
-      const connectedAddress = accounts[0];
-
-      // Verify the connected address matches what user entered
-      if (connectedAddress.toLowerCase() !== walletAddress.toLowerCase()) {
-        throw new Error(
-          `Connected wallet address (${connectedAddress}) doesn't match entered address (${walletAddress}). Please connect the correct wallet.`
-        );
-      }
-
-      // Sign the message using web3
-      const signature = await ethereum.request({
-        method: 'personal_sign',
-        params: [message, connectedAddress],
-      });
-
-      console.log('✅ Web: Got signature from MetaMask');
-
-      // Determine chain id (optional)
-      let chainIdStr: string | undefined;
-      try {
-        const chainHex = await ethereum.request({ method: 'eth_chainId' });
-        const chainDec = parseInt(chainHex, 16);
-        if (!isNaN(chainDec)) chainIdStr = `eip155:${chainDec}`;
-      } catch {}
-
-      // Step 3: Verify with backend
-      await verifySignatureWithBackend(
-        connectedAddress,
-        signature,
-        nonceValue,
-        'personal_sign',
-        chainIdStr
-      );
-    } catch (error: any) {
-      console.error('❌ Web wallet signing error:', error);
-
-      if (error.code === 4001) {
-        // User rejected the request
-        Alert.alert('Cancelled', 'Wallet signature was cancelled by user.');
-      } else {
-        Alert.alert(
-          'Error',
-          error.message || 'Failed to sign message with wallet'
-        );
-      }
-
-      setStep('input');
-      throw error;
-    }
-  };
+  // Signature-based flows are disabled for now
 
   const handleDemoLogin = async () => {
     if (!ENV.IS_DEV) {
@@ -226,36 +136,26 @@ export default function LoginScreen() {
       const demoWallet = '0x1234567890123456789012345678901234567890';
       setWalletAddress(demoWallet);
 
-      console.log('📡 Demo: Requesting nonce for wallet:', demoWallet);
+      console.log('📡 Demo: Requesting OTP for wallet:', demoWallet);
 
-      const nonceResponse = await apiService.requestNonce(demoWallet);
+      const otpResp = await apiService.requestOtp(demoWallet);
 
-      if (!nonceResponse.success) {
-        Alert.alert('Error', nonceResponse.message || 'Failed to get nonce');
+      if (!otpResp.success) {
+        Alert.alert('Error', otpResp.message || 'Failed to request OTP');
         setStep('input');
         return;
       }
 
-      const receivedNonce = nonceResponse.data?.nonce;
-      if (!receivedNonce) {
-        Alert.alert('Error', 'No nonce received from server');
-        setStep('input');
-        return;
+      setTxHash(otpResp.data?.txHash || null);
+      const dev = (otpResp.data as any)?.devOtp as string | undefined;
+      if (dev) {
+        // Auto-fill and verify in dev for speed
+        setOtp(dev);
+        await new Promise((r) => setTimeout(r, 300));
+        await handleVerifyOtp();
+      } else {
+        setStep('otp');
       }
-      setNonce(receivedNonce);
-
-      // Create demo signature
-      const demoSignature = `0x${'mock'.repeat(16)}${receivedNonce
-        .toString()
-        .padStart(8, '0')}`;
-
-      console.log('🔐 Demo: Verifying with mock signature...');
-
-      await verifySignatureWithBackend(
-        demoWallet,
-        demoSignature,
-        receivedNonce
-      );
     } catch (error) {
       console.error('❌ Demo login error:', error);
       Alert.alert('Error', 'Demo login failed. Please try again.');
@@ -293,62 +193,10 @@ export default function LoginScreen() {
   const handleReset = () => {
     setStep('input');
     setWalletAddress('');
-    setNonce(null);
+    // no-op
   };
 
-  const handleWalletConnectSigning = async (
-    message: string,
-    nonceValue: number
-  ) => {
-    try {
-      console.log('📱 Mobile: Using WalletConnect v2 for signing...');
-
-      // Import WalletConnect service
-      const { WalletConnectService } = await import(
-        '../utils/WalletConnectService'
-      );
-
-      // Connect to wallet and sign message directly
-      const { signature, address, method, chainId } =
-        await WalletConnectService.connectAndSign(message, nonceValue);
-
-      console.log('✅ Mobile: Got signature from WalletConnect');
-
-      // If user typed an address, ensure it matches the connected wallet
-      if (
-        walletAddress &&
-        walletAddress.toLowerCase() !== address.toLowerCase()
-      ) {
-        Alert.alert(
-          'Address Mismatch',
-          `Connected wallet (${address}) doesn't match entered address (${walletAddress}). Using connected wallet.`
-        );
-      }
-
-      // Verify with backend using the connected address
-      await verifySignatureWithBackend(
-        address,
-        signature,
-        nonceValue,
-        method,
-        chainId
-      );
-    } catch (error: any) {
-      console.error('❌ WalletConnect signing error:', error);
-
-      if (error.message.includes('User rejected')) {
-        Alert.alert('Cancelled', 'Wallet connection was cancelled by user.');
-      } else {
-        Alert.alert(
-          'Error',
-          error.message || 'Failed to connect or sign with wallet'
-        );
-      }
-
-      setStep('input');
-      throw error;
-    }
-  };
+  // Signature-based flows are disabled for now
 
   const renderInputStep = () => (
     <View style={styles.stepContainer}>
@@ -408,21 +256,20 @@ export default function LoginScreen() {
 
   const renderProcessingStep = () => (
     <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Connecting Wallet...</Text>
+      <Text style={styles.stepTitle}>Sending OTP...</Text>
       <Text style={styles.stepDescription}>
-        {typeof window !== 'undefined' && (window as any).ethereum
-          ? 'MetaMask will open automatically. Please sign the message to authenticate.'
-          : 'A wallet app will open via WalletConnect. Approve the connection and sign the message to authenticate.'}
+        We&apos;ll emit a one-time code to your wallet address using an on-chain
+        event. Enter that code on the next screen to continue.
       </Text>
 
       <View style={styles.infoContainer}>
         <Text style={styles.infoLabel}>Wallet Address:</Text>
         <Text style={styles.infoValue}>{walletAddress}</Text>
 
-        {nonce && (
+        {txHash && (
           <>
-            <Text style={styles.infoLabel}>Nonce:</Text>
-            <Text style={styles.infoValue}>{nonce}</Text>
+            <Text style={styles.infoLabel}>Tx Hash:</Text>
+            <Text style={styles.infoValue}>{txHash}</Text>
           </>
         )}
       </View>
@@ -464,6 +311,18 @@ export default function LoginScreen() {
               <Text style={styles.infoValue}>{txHash}</Text>
             </View>
           )}
+          {ENV.IS_DEV && devOtp && (
+            <View style={styles.infoContainer}>
+              <Text style={styles.infoLabel}>Dev OTP (debug only):</Text>
+              <Text style={styles.infoValue}>{devOtp}</Text>
+              <TouchableOpacity
+                style={[styles.demoButton, { marginTop: 12 }]}
+                onPress={() => setOtp(devOtp)}
+              >
+                <Text style={styles.demoButtonText}>Use Dev OTP</Text>
+              </TouchableOpacity>
+            </View>
+          )}
           <View style={styles.inputContainer}>
             <Text style={styles.inputLabel}>OTP Code</Text>
             <TextInput
@@ -486,6 +345,16 @@ export default function LoginScreen() {
             ) : (
               <Text style={styles.primaryButtonText}>Verify OTP</Text>
             )}
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.demoButton,
+              { backgroundColor: '#64748b', marginTop: 8 },
+            ]}
+            onPress={handleConnectWallet}
+            disabled={loading}
+          >
+            <Text style={styles.demoButtonText}>Resend OTP</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.backButton} onPress={handleReset}>
             <Text style={styles.backButtonText}>← Back</Text>

@@ -16,6 +16,35 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+### Login (OTP-only)
+
+If deep linking/signature is unavailable, the app uses an OTP-only flow:
+
+1. Enter wallet address
+2. Tap Connect Wallet to request an OTP
+3. Read the OTP emitted by the FitFiSignup contract (visible in wallet activity or block explorer)
+4. Enter the OTP in the app to sign up / log in
+
+Dev mode: the backend may return `devOtp` in the response for quick testing.
+
+# Welcome to your Expo app 👋
+
+This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+
+## Get started
+
+1. Install dependencies
+
+   ```bash
+   npm install
+   ```
+
+2. Start the app
+
+   ```bash
+   npx expo start
+   ```
+
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)
