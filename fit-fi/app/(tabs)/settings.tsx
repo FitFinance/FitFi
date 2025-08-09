@@ -263,19 +263,15 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* Debug Section (Dev Only) */}
-        {__DEV__ && (
-          <>
-            <SectionHeader title='Developer' />
-            <View style={styles.section}>
-              <SettingRow
-                title='Network Test'
-                subtitle='Test network connectivity'
-                onPress={() => router.push('/network-test')}
-              />
-            </View>
-          </>
-        )}
+        {/* Network Test (Always Available - previously dev only) */}
+        <SectionHeader title='Diagnostics' />
+        <View style={styles.section}>
+          <SettingRow
+            title='Network Test'
+            subtitle='Test API, Redis, Mongo & chain connectivity'
+            onPress={() => router.push('/network-test')}
+          />
+        </View>
 
         {/* Logout */}
         <View style={styles.logoutSection}>

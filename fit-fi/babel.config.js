@@ -1,7 +1,15 @@
 module.exports = function (api) {
   api.cache(true);
   return {
-    presets: ['babel-preset-expo'],
+    presets: [
+      [
+        'babel-preset-expo',
+        {
+          // Needed for packages (e.g. valtio) that use import.meta in Hermes
+          unstable_transformImportMeta: true,
+        },
+      ],
+    ],
     plugins: [
       // Expo Router Babel plugin
       require.resolve('expo-router/babel'),

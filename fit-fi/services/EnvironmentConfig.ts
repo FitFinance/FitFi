@@ -5,21 +5,55 @@ export interface EnvConfig {
   mockWalletAddress: string;
   logLevel: 'debug' | 'info' | 'warn' | 'error' | 'silent';
   appEnv: 'development' | 'staging' | 'production' | string;
+  walletConnectProjectId?: string;
 }
 
 // Load from process.env (Expo constants / app.config.js can inject) with fallbacks
+// Merge sources: process.env (Metro in dev / inline in build) + Expo Constants extra (release)
+let mergedEnv: Record<string, any> = {};
+try {
+  // Lazy require to avoid adding import overhead if not available
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const Constants = require('expo-constants').default;
+  const extra =
+    (Constants?.expoConfig?.extra || Constants?.manifest2?.extra) ?? {};
+  mergedEnv = {
+    ...(typeof process !== 'undefined' ? process.env || {} : {}),
+    ...extra,
+  };
+} catch {
+  mergedEnv = { ...(typeof process !== 'undefined' ? process.env || {} : {}) };
+}
+
+// Convenience accessor (maintain original name for existing code)
 // @ts-ignore
-const env: Record<string, string | undefined> =
-  typeof process !== 'undefined' ? process.env || {} : {};
+const env: Record<string, string | undefined> = mergedEnv;
+
+let resolvedBaseUrl =
+  env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000/api';
+// Android emulator / device fallbacks if someone accidentally leaves localhost
+if (/localhost|127\.0\.0\.1/.test(resolvedBaseUrl)) {
+  // If running on Android, attempt typical emulator host mapping
+  // @ts-ignore
+  const isAndroid =
+    typeof navigator !== 'undefined' &&
+    /Android/i.test(navigator.userAgent || '');
+  if (isAndroid) {
+    resolvedBaseUrl = resolvedBaseUrl
+      .replace('localhost', '10.0.2.2')
+      .replace('127.0.0.1', '10.0.2.2');
+  }
+}
 
 export const ENV_CONFIG: EnvConfig = {
-  apiBaseUrl: env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000/api',
+  apiBaseUrl: resolvedBaseUrl,
   apiTimeout: Number(env.EXPO_PUBLIC_API_TIMEOUT || 10000),
   mockWalletAddress:
     env.EXPO_PUBLIC_MOCK_WALLET || '0xDEMO000000000000000000000000000000000000',
   logLevel: (env.EXPO_PUBLIC_LOG_LEVEL as EnvConfig['logLevel']) || 'debug',
   appEnv:
     (env.EXPO_PUBLIC_APP_ENV as any) || (env.NODE_ENV as any) || 'development',
+  walletConnectProjectId: env.EXPO_PUBLIC_WC_PROJECT_ID,
 };
 
 export const getApiUrl = (path: string) => {

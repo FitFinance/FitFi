@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { GlobalStyles, Colors } from '@/styles/GlobalStyles';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ConnectWalletScreen() {
   const router = useRouter();
+  const { connectWallet, isLoading } = useAuth();
+  const [error, setError] = useState<string | null>(null);
 
   const walletOptions = [
     {
@@ -39,11 +42,18 @@ export default function ConnectWalletScreen() {
     },
   ];
 
-  const handleWalletConnect = (walletId: string) => {
-    // Placeholder wallet connection logic
-    console.log(`Connecting to ${walletId}...`);
-    // For now, just navigate to home
-    router.replace('/(tabs)/home');
+  const handleWalletConnect = async (walletId: string) => {
+    setError(null);
+    try {
+      const res = await connectWallet();
+      if (res.success) {
+        router.replace('/(tabs)/home');
+      } else {
+        setError(res.details?.description || res.message || 'Login failed');
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Unexpected error');
+    }
   };
 
   return (
@@ -67,11 +77,16 @@ export default function ConnectWalletScreen() {
           </View>
 
           <View style={styles.walletList}>
+            {error && (
+              <View style={styles.errorBox}>
+                <Text style={styles.errorText}>{error}</Text>
+              </View>
+            )}
             {walletOptions.map((wallet) => (
               <TouchableOpacity
                 key={wallet.id}
                 style={styles.walletOption}
-                onPress={() => handleWalletConnect(wallet.id)}
+                onPress={() => !isLoading && handleWalletConnect(wallet.id)}
               >
                 <View style={styles.walletIcon}>
                   <Text style={styles.iconText}>{wallet.icon}</Text>
@@ -82,7 +97,7 @@ export default function ConnectWalletScreen() {
                     {wallet.description}
                   </Text>
                 </View>
-                <Text style={styles.arrow}>→</Text>
+                <Text style={styles.arrow}>{isLoading ? '...' : '→'}</Text>
               </TouchableOpacity>
             ))}
           </View>

@@ -29,36 +29,63 @@ const STORAGE_KEYS = {
   USER_DATA: 'user_data',
 };
 
-const generateMockSignature = (message: string, address: string): string => {
-  return `mock_signature_${address}_${message.length}_${Date.now()}`;
-};
+const generateMockSignature = (message: string, address: string): string =>
+  `mock_signature_${address}_${message.length}_${Date.now()}`;
 
-const openMetaMask = async (message: string): Promise<string | null> => {
-  try {
-    const mockSignature = generateMockSignature(message, 'mock_address');
-
-    return new Promise((resolve) => {
-      Alert.alert(
-        'MetaMask Signature',
-        `Sign this message to authenticate:\n\n"${message}"\n\nIn a real app, this would open MetaMask mobile app.`,
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => resolve(null),
-          },
-          {
-            text: 'Sign (Mock)',
-            onPress: () => resolve(mockSignature),
-          },
-        ]
+// WalletConnect Universal Provider (preferred programmatic flow)
+// We previously attempted to use @walletconnect/modal-react-native `create` API (which does not exist).
+// Switch to dynamic import of UniversalProvider to avoid bundling issues if unused.
+let wcProvider: any = null;
+let wcInitializing: Promise<any> | null = null;
+async function ensureWalletConnect(): Promise<any | null> {
+  if (wcProvider) return wcProvider;
+  if (wcInitializing) return wcInitializing;
+  wcInitializing = (async () => {
+    try {
+      const { default: UniversalProvider } = await import(
+        '@walletconnect/universal-provider'
       );
-    });
-  } catch (error) {
-    console.error('Error opening MetaMask:', error);
-    return null;
-  }
-};
+      const projectId =
+        ENV_CONFIG.walletConnectProjectId ||
+        // Safe fallback (public demo projectId) – replace in prod env variables
+        '3a48a1389fee89b77191ca5754fc252d';
+      wcProvider = await UniversalProvider.init({
+        projectId,
+        metadata: {
+          name: 'FitFi',
+          description: 'FitFi Wallet Authentication',
+          url: 'https://fitfi.app',
+          icons: ['https://walletconnect.com/walletconnect-logo.png'],
+        },
+      });
+
+      // Basic event logging (optional)
+      wcProvider.on?.('display_uri', (uri: string) => {
+        envLog('info', 'WC display_uri', uri);
+      });
+      wcProvider.on?.('session_event', (evt: any) => {
+        envLog('debug', 'WC session_event', evt);
+      });
+      wcProvider.on?.('session_delete', () => {
+        envLog('warn', 'WC session deleted');
+      });
+      return wcProvider;
+    } catch (err) {
+      envLog(
+        'warn',
+        'WalletConnect provider init failed (fallback to mock)',
+        err
+      );
+      wcProvider = null;
+      return null;
+    } finally {
+      wcInitializing = null;
+    }
+  })();
+  return wcInitializing;
+}
+
+// Removed openMetaMask mock flow (real wallet required now)
 
 class WalletService {
   private baseUrl: string;
@@ -68,43 +95,17 @@ class WalletService {
     envLog('info', 'WalletService initialized', { baseUrl: this.baseUrl });
   }
 
-  private generateSignMessage(address: string): string {
+  public generateSignMessage(address: string): string {
     const timestamp = new Date().toISOString();
     return `Welcome to FitFi!\n\nSign this message to authenticate your wallet.\n\nWallet: ${address}\nTimestamp: ${timestamp}\n\nThis request will not trigger a blockchain transaction or cost any gas fees.`;
   }
 
-  async connectWallet(): Promise<AuthResponse> {
+  public async authenticateWithSignature(
+    walletAddress: string,
+    signature: string,
+    message: string
+  ): Promise<AuthResponse> {
     try {
-      const walletAddress = await this.getMockWalletAddress();
-
-      if (!walletAddress) {
-        return {
-          success: false,
-          message: 'No wallet address provided',
-          details: {
-            title: 'Wallet Connection Failed',
-            description:
-              'Unable to get wallet address. Please ensure MetaMask is installed and unlocked.',
-          },
-        };
-      }
-
-      const message = this.generateSignMessage(walletAddress);
-
-      const signature = await openMetaMask(message);
-
-      if (!signature) {
-        return {
-          success: false,
-          message: 'User rejected the signature request',
-          details: {
-            title: 'Signature Rejected',
-            description:
-              'You need to sign the message to authenticate with your wallet.',
-          },
-        };
-      }
-
       const controller = new AbortController();
       const timeoutId = setTimeout(
         () => controller.abort(),
@@ -116,11 +117,7 @@ class WalletService {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          walletAddress,
-          signature,
-          message,
-        }),
+        body: JSON.stringify({ walletAddress, signature, message }),
         signal: controller.signal,
       });
 
@@ -129,22 +126,20 @@ class WalletService {
 
       if (data.success) {
         await this.storeAuthData(data.data.user, data.data.token);
-
         return {
           success: true,
           message: data.message,
           data: data.data,
           details: data.details,
         };
-      } else {
-        return {
-          success: false,
-          message: data.message || 'Authentication failed',
-          details: data.details,
-        };
       }
-    } catch (error) {
-      envLog('error', 'Wallet connection error', error);
+      return {
+        success: false,
+        message: data.message || 'Authentication failed',
+        details: data.details,
+      };
+    } catch (err) {
+      envLog('error', 'Authenticate with signature error', err);
       return {
         success: false,
         message: 'Connection failed',
@@ -157,24 +152,107 @@ class WalletService {
     }
   }
 
-  private async getMockWalletAddress(): Promise<string> {
-    return new Promise((resolve) => {
-      Alert.alert(
-        'Connect Wallet',
-        'In a real app, this would connect to MetaMask or another wallet provider.\n\nFor demo purposes, enter a mock wallet address:',
-        [
-          {
-            text: 'Cancel',
-            style: 'cancel',
-            onPress: () => resolve(''),
+  async connectWallet(): Promise<AuthResponse> {
+    try {
+      let signature: string | null = null;
+      let walletAddress: string | undefined;
+      const provider = await ensureWalletConnect();
+      if (!provider) {
+        return {
+          success: false,
+          message: 'WalletConnect unavailable',
+          details: {
+            title: 'WalletConnect Not Ready',
+            description:
+              'Unable to initialize WalletConnect. Please try again later.',
           },
-          {
-            text: 'Use Demo Address',
-            onPress: () => resolve(ENV_CONFIG.mockWalletAddress),
+        };
+      }
+      try {
+        // Establish a session (Ethereum mainnet by default). Adjust chains if supporting testnets.
+        const session = await provider.connect({
+          optionalNamespaces: {
+            eip155: {
+              methods: [
+                'personal_sign',
+                'eth_sendTransaction',
+                'eth_signTypedData',
+              ],
+              chains: ['eip155:1'],
+              events: ['accountsChanged', 'chainChanged'],
+            },
           },
-        ]
-      );
-    });
+        });
+        // Accounts format: eip155:1:0xABC...
+        const accounts =
+          session?.namespaces?.eip155?.accounts || session?.accounts || [];
+        walletAddress = accounts[0]?.split(':').pop();
+      } catch (err) {
+        return {
+          success: false,
+          message: 'Wallet connection cancelled',
+          details: {
+            title: 'Cancelled',
+            description: 'You must approve the wallet connection to proceed.',
+          },
+        };
+      }
+      if (!walletAddress) {
+        return {
+          success: false,
+          message: 'No wallet address returned',
+          details: {
+            title: 'Wallet Address Missing',
+            description: 'No address received from wallet. Retry connection.',
+          },
+        };
+      }
+      const message = this.generateSignMessage(walletAddress);
+      try {
+        const params = [message, walletAddress];
+        signature = await provider.request({
+          method: 'personal_sign',
+          params,
+        });
+      } catch (signErr) {
+        if (ENV_CONFIG.appEnv === 'development') {
+          envLog('warn', 'Signing failed, using mock (dev only)', signErr);
+          signature = generateMockSignature(message, walletAddress);
+        } else {
+          return {
+            success: false,
+            message: 'Signature rejected',
+            details: {
+              title: 'Signature Rejected',
+              description:
+                'You must sign the message in your wallet to authenticate.',
+            },
+          };
+        }
+      }
+      if (!signature) {
+        return {
+          success: false,
+          message: 'No signature captured',
+          details: {
+            title: 'Signing Failed',
+            description: 'A signature is required. Please try again.',
+          },
+        };
+      }
+      return this.authenticateWithSignature(walletAddress, signature, message);
+    } catch (error) {
+      envLog('error', 'Wallet connection error', error);
+      return {
+        success: false,
+        message: 'Connection failed',
+        details: {
+          title: 'Network Error',
+          description:
+            'Unable to connect to the server. Check your internet connection.',
+        },
+      };
+    }
   }
 
   private async storeAuthData(user: User, token: string): Promise<void> {
