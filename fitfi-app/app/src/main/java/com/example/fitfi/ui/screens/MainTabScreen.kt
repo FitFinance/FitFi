@@ -34,10 +34,10 @@ fun MainTabScreen(
             ActiveDuelsScreen(navController = navController) 
         },
         TabItem("History", Icons.Default.RestoreFromTrash) { 
-            PreviousDuelsScreen(navController = navController) 
+            DuelHistoryScreen(navController = navController) 
         },
         TabItem("Settings", Icons.Default.Settings) { 
-            SettingsScreen(navController = navController) 
+            UserSettingsScreen(navController = navController) 
         }
     )
 

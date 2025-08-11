@@ -19,6 +19,8 @@ sealed class Screen(val route: String) {
     object ActiveDuels : Screen("active_duels")
     object PreviousDuels : Screen("previous_duels")
     object Settings : Screen("settings")
+    object Challenges : Screen("challenges")
+    object DuelHistory : Screen("duel_history")
     
     // Detail screens
     object DuelDetails : Screen("duel_details/{duelId}") {
@@ -128,6 +130,18 @@ fun FitFiNavigation(
                 currentTab = 4
             )
         }
+
+        composable(Screen.Challenges.route) {
+            ChallengesScreen(
+                navController = navController
+            )
+        }
+
+        composable(Screen.DuelHistory.route) {
+            DuelHistoryScreen(
+                navController = navController
+            )
+        }
         
         composable(Screen.DuelDetails.route) { backStackEntry ->
             val duelId = backStackEntry.arguments?.getString("duelId") ?: ""
@@ -154,9 +168,7 @@ fun FitFiNavigation(
         
         composable(Screen.UserSettings.route) {
             UserSettingsScreen(
-                onNavigateBack = {
-                    navController.popBackStack()
-                }
+                navController = navController
             )
         }
         

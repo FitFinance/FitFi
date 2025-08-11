@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Wallet
@@ -12,6 +13,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -19,8 +21,15 @@ import com.example.fitfi.ui.components.*
 import com.example.fitfi.ui.theme.*
 
 enum class WalletConnectionState {
-    Idle, Connecting, Signing, Error
+    Idle, Connecting, Error
 }
+
+private data class WalletOption(
+    val id: String,
+    val name: String,
+    val description: String,
+    val icon: String
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -32,6 +41,35 @@ fun ConnectWalletScreen(
     var connectionState by remember { mutableStateOf(WalletConnectionState.Idle) }
     var selectedWallet by remember { mutableStateOf<String?>(null) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    
+    val walletOptions = remember {
+        listOf(
+            WalletOption(
+                id = "walletconnect",
+                name = "Connect Wallet",
+                description = "WalletConnect (MetaMask, Trust, Rainbow, Coinbase...)",
+                icon = "🔗"
+            ),
+            WalletOption(
+                id = "metamask",
+                name = "MetaMask",
+                description = "Direct MetaMask SDK (fallback to WC)",
+                icon = "🦊"
+            ),
+            WalletOption(
+                id = "trust",
+                name = "Trust Wallet (via WC)",
+                description = "Trust Wallet through WalletConnect",
+                icon = "🛡️"
+            ),
+            WalletOption(
+                id = "coinbase",
+                name = "Coinbase Wallet (via WC)",
+                description = "Coinbase Wallet through WalletConnect",
+                icon = "💙"
+            )
+        )
+    }
     
     Column(
         modifier = Modifier
@@ -50,13 +88,11 @@ fun ConnectWalletScreen(
                 )
             },
             navigationIcon = {
-                IconButton(
-                    onClick = onNavigateBack
-                ) {
+                IconButton(onClick = onNavigateBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
                         contentDescription = "Back",
-                        tint = FitFiColors.TextPrimary
+                        tint = FitFiColors.Primary
                     )
                 }
             },
@@ -75,95 +111,78 @@ fun ConnectWalletScreen(
             Spacer(modifier = Modifier.height(FitFiSpacing.md))
             
             Text(
-                text = "Choose your preferred wallet to get started with FitFi",
+                text = "Choose your preferred wallet to connect to FitFi",
                 style = MaterialTheme.typography.bodyLarge,
                 color = FitFiColors.TextSecondary,
                 textAlign = TextAlign.Center
             )
             
-            Spacer(modifier = Modifier.height(FitFiSpacing.xxl))
+            Spacer(modifier = Modifier.height(FitFiSpacing.xl))
+            
+            // Error Message
+            if (errorMessage != null) {
+                FitFiCard(variant = FitFiCardVariant.Base) {
+                    Text(
+                        text = errorMessage!!,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = FitFiColors.Error
+                    )
+                    
+                    Spacer(modifier = Modifier.height(FitFiSpacing.sm))
+                    
+                    FitFiSecondaryButton(
+                        text = "Try Again",
+                        onClick = {
+                            errorMessage = null
+                            connectionState = WalletConnectionState.Idle
+                            selectedWallet = null
+                        },
+                        size = FitFiButtonSize.Small
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(FitFiSpacing.md))
+            }
             
             // Wallet Options
             Column(
-                verticalArrangement = Arrangement.spacedBy(FitFiSpacing.md)
+                verticalArrangement = Arrangement.spacedBy(FitFiSpacing.sm)
             ) {
-                WalletOption(
-                    name = "MetaMask",
-                    description = "Most popular Ethereum wallet",
-                    isSelected = selectedWallet == "metamask",
-                    isLoading = connectionState == WalletConnectionState.Connecting && selectedWallet == "metamask",
-                    isEnabled = connectionState == WalletConnectionState.Idle,
-                    onClick = {
-                        selectedWallet = "metamask"
-                        connectionState = WalletConnectionState.Connecting
-                        // Simulate connection process
-                        // In real app, integrate with MetaMask SDK
-                        onNavigateToHome()
-                    }
-                )
-                
-                WalletOption(
-                    name = "WalletConnect",
-                    description = "Connect to multiple wallet providers",
-                    isSelected = selectedWallet == "walletconnect",
-                    isLoading = connectionState == WalletConnectionState.Connecting && selectedWallet == "walletconnect",
-                    isEnabled = connectionState == WalletConnectionState.Idle,
-                    onClick = {
-                        selectedWallet = "walletconnect"
-                        connectionState = WalletConnectionState.Connecting
-                        // Simulate connection process
-                        onNavigateToHome()
-                    }
-                )
-                
-                WalletOption(
-                    name = "Trust Wallet",
-                    description = "Secure mobile wallet via WalletConnect",
-                    isSelected = selectedWallet == "trust",
-                    isLoading = connectionState == WalletConnectionState.Connecting && selectedWallet == "trust",
-                    isEnabled = connectionState == WalletConnectionState.Idle,
-                    onClick = {
-                        selectedWallet = "trust"
-                        connectionState = WalletConnectionState.Connecting
-                        onNavigateToHome()
-                    }
-                )
-                
-                WalletOption(
-                    name = "Coinbase Wallet",
-                    description = "Easy-to-use wallet from Coinbase",
-                    isSelected = selectedWallet == "coinbase",
-                    isLoading = connectionState == WalletConnectionState.Connecting && selectedWallet == "coinbase",
-                    isEnabled = connectionState == WalletConnectionState.Idle,
-                    onClick = {
-                        selectedWallet = "coinbase"
-                        connectionState = WalletConnectionState.Connecting
-                        onNavigateToHome()
-                    }
-                )
+                walletOptions.forEach { wallet ->
+                    WalletOptionCard(
+                        wallet = wallet,
+                        isSelected = selectedWallet == wallet.id,
+                        isLoading = connectionState == WalletConnectionState.Connecting && selectedWallet == wallet.id,
+                        isEnabled = connectionState == WalletConnectionState.Idle,
+                        onClick = {
+                            selectedWallet = wallet.id
+                            connectionState = WalletConnectionState.Connecting
+                            // Simulate connection
+                            onNavigateToHome()
+                        }
+                    )
+                }
             }
             
             Spacer(modifier = Modifier.height(FitFiSpacing.xl))
             
             // Info Card
-            FitFiCard {
-                Column {
-                    Text(
-                        text = "Why connect a wallet?",
-                        style = MaterialTheme.typography.titleMedium.copy(
-                            fontWeight = FontWeight.SemiBold
-                        ),
-                        color = FitFiColors.TextPrimary
-                    )
-                    
-                    Spacer(modifier = Modifier.height(FitFiSpacing.sm))
-                    
-                    Text(
-                        text = "• Secure authentication without passwords\n• Earn and manage tokens from duels\n• Participate in the FitFi ecosystem\n• Own your fitness achievements on-chain",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = FitFiColors.TextSecondary
-                    )
-                }
+            FitFiCard(variant = FitFiCardVariant.Highlight) {
+                Text(
+                    text = "Why connect a wallet?",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = FitFiColors.TextPrimary
+                )
+                
+                Spacer(modifier = Modifier.height(FitFiSpacing.sm))
+                
+                Text(
+                    text = "• Secure authentication without passwords\n• Earn and manage your FitFi tokens\n• Participate in challenges and duels\n• Track your fitness achievements on-chain",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = FitFiColors.TextSecondary
+                )
             }
             
             Spacer(modifier = Modifier.height(FitFiSpacing.lg))
@@ -178,42 +197,13 @@ fun ConnectWalletScreen(
                     color = FitFiColors.Primary
                 )
             }
-            
-            // Error handling
-            if (errorMessage != null) {
-                Spacer(modifier = Modifier.height(FitFiSpacing.md))
-                FitFiCard(variant = FitFiCardVariant.Base) {
-                    Text(
-                        text = errorMessage!!,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = FitFiColors.Error
-                    )
-                    
-                    Spacer(modifier = Modifier.height(FitFiSpacing.sm))
-                    
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(FitFiSpacing.sm)
-                    ) {
-                        FitFiSecondaryButton(
-                            text = "Try Again",
-                            onClick = {
-                                errorMessage = null
-                                connectionState = WalletConnectionState.Idle
-                                selectedWallet = null
-                            },
-                            size = FitFiButtonSize.Small
-                        )
-                    }
-                }
-            }
         }
     }
 }
 
 @Composable
-private fun WalletOption(
-    name: String,
-    description: String,
+private fun WalletOptionCard(
+    wallet: WalletOption,
     isSelected: Boolean,
     isLoading: Boolean,
     isEnabled: Boolean,
@@ -233,18 +223,24 @@ private fun WalletOption(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = Icons.Default.Wallet,
-                    contentDescription = null,
-                    tint = if (isSelected) FitFiColors.Primary else FitFiColors.TextMuted,
-                    modifier = Modifier.size(32.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(FitFiRadii.md))
+                        .background(FitFiColors.SurfaceAlt),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = wallet.icon,
+                        style = MaterialTheme.typography.headlineSmall
+                    )
+                }
                 
                 Spacer(modifier = Modifier.width(FitFiSpacing.md))
                 
                 Column {
                     Text(
-                        text = name,
+                        text = wallet.name,
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.SemiBold
                         ),
@@ -252,7 +248,7 @@ private fun WalletOption(
                     )
                     
                     Text(
-                        text = description,
+                        text = wallet.description,
                         style = MaterialTheme.typography.bodySmall,
                         color = FitFiColors.TextMuted
                     )
@@ -264,6 +260,12 @@ private fun WalletOption(
                     modifier = Modifier.size(20.dp),
                     color = FitFiColors.Primary,
                     strokeWidth = 2.dp
+                )
+            } else {
+                Text(
+                    text = "→",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = FitFiColors.TextMuted
                 )
             }
         }

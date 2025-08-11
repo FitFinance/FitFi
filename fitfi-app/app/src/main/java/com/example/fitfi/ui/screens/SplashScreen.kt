@@ -2,10 +2,12 @@ package com.example.fitfi.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -18,11 +20,14 @@ fun SplashScreen(
     onNavigateToHome: () -> Unit
 ) {
     var isLoading by remember { mutableStateOf(true) }
+    var loadingText by remember { mutableStateOf("Loading...") }
     
-    // Simulate loading and auth check
+    // Simulate loading and auth check with text updates
     LaunchedEffect(Unit) {
-        delay(2000) // Simulate loading time
-        // For demo purposes, navigate to login. In real app, check auth state
+        loadingText = "Checking authentication..."
+        delay(1000)
+        loadingText = "Loading app data..."
+        delay(500)
         isLoading = false
         onNavigateToLogin()
     }
@@ -37,25 +42,21 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Logo placeholder
-            Card(
-                modifier = Modifier.size(120.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = FitFiColors.Primary
-                )
+            // App Logo - larger and more styled
+            Box(
+                modifier = Modifier
+                    .size(180.dp)
+                    .clip(RoundedCornerShape(FitFiRadii.lg))
+                    .background(FitFiColors.Primary),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "FF",
-                        style = MaterialTheme.typography.displayLarge.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = FitFiColors.TextPrimary
-                    )
-                }
+                Text(
+                    text = "FF",
+                    style = MaterialTheme.typography.displayLarge.copy(
+                        fontWeight = FontWeight.ExtraBold
+                    ),
+                    color = FitFiColors.TextPrimary
+                )
             }
             
             Spacer(modifier = Modifier.height(FitFiSpacing.lg))
@@ -68,13 +69,36 @@ fun SplashScreen(
                 color = FitFiColors.TextPrimary
             )
             
-            Spacer(modifier = Modifier.height(FitFiSpacing.md))
+            Spacer(modifier = Modifier.height(FitFiSpacing.xs))
+            
+            Text(
+                text = "Earn by staying fit",
+                style = MaterialTheme.typography.titleMedium.copy(
+                    fontWeight = FontWeight.Normal
+                ),
+                color = FitFiColors.TextSecondary
+            )
+            
+            Spacer(modifier = Modifier.height(FitFiSpacing.xxl))
             
             if (isLoading) {
-                CircularProgressIndicator(
-                    color = FitFiColors.Primary,
-                    modifier = Modifier.size(32.dp)
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        color = FitFiColors.Primary,
+                        modifier = Modifier.size(40.dp),
+                        strokeWidth = 4.dp
+                    )
+                    
+                    Spacer(modifier = Modifier.height(FitFiSpacing.md))
+                    
+                    Text(
+                        text = loadingText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = FitFiColors.TextSecondary
+                    )
+                }
             }
         }
         
@@ -87,7 +111,7 @@ fun SplashScreen(
         ) {
             Text(
                 text = "Gamified Fitness Duels",
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.bodyMedium,
                 color = FitFiColors.TextMuted,
                 textAlign = TextAlign.Center
             )
@@ -95,7 +119,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(FitFiSpacing.xs))
             
             Text(
-                text = "v1.0.0",
+                text = "Version 1.0.0",
                 style = MaterialTheme.typography.labelSmall,
                 color = FitFiColors.TextMuted
             )
