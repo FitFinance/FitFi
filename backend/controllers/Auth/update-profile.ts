@@ -38,14 +38,16 @@ const updateProfile: fn = catchAsync(
     }
 
     // Basic validation for inappropriate content (you can expand this)
-    const inappropriatePattern: RegExp = /^(anonymous|guest|admin|null|undefined)$/i;
+    const inappropriatePattern: RegExp =
+      /^(anonymous|guest|admin|null|undefined)$/i;
     if (inappropriatePattern.test(trimmedName)) {
       return next(
         new AppError(
           'Please choose a different name',
           {
             title: 'Invalid Name',
-            description: 'This name is not allowed. Please choose another name.',
+            description:
+              'This name is not allowed. Please choose another name.',
           },
           400
         )
@@ -56,13 +58,13 @@ const updateProfile: fn = catchAsync(
       // Update user profile
       const updatedUser: IUser | null = await User.findByIdAndUpdate(
         req.user._id,
-        { 
+        {
           name: trimmedName,
-          lastLogin: new Date()
+          lastLogin: new Date(),
         },
-        { 
-          new: true, 
-          runValidators: true 
+        {
+          new: true,
+          runValidators: true,
         }
       ).select('-nonce');
 
@@ -108,7 +110,8 @@ const updateProfile: fn = catchAsync(
           'Failed to update profile',
           {
             title: 'Update Failed',
-            description: 'An error occurred while updating your profile. Please try again.',
+            description:
+              'An error occurred while updating your profile. Please try again.',
           },
           500
         )

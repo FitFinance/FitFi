@@ -5,12 +5,12 @@ plugins {
 
 android {
     namespace = "com.example.fitfi"
-    compileSdk = 35
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.example.fitfi"
         minSdk = 28
-        targetSdk = 35
+    targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -24,6 +24,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            // Provide the same DEV_HOST_IP so NetworkModule compiles in release
+            val devHostIpProp = project.findProperty("fitfi.devHostIp") as String? ?: "192.168.164.117"
+            buildConfigField("String", "DEV_HOST_IP", "\"$devHostIpProp\"")
+        }
+        debug {
+            // Allow overriding dev host IP via gradle property: -Pfitfi.devHostIp=192.168.0.50
+            val devHostIpProp = project.findProperty("fitfi.devHostIp") as String? ?: "192.168.164.117"
+            buildConfigField("String", "DEV_HOST_IP", "\"$devHostIpProp\"")
         }
     }
     compileOptions {
@@ -35,9 +43,10 @@ android {
     }
     buildFeatures {
         compose = true
+    buildConfig = true
     }
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
+        kotlinCompilerExtensionVersion = "1.5.14"
     }
 }
 

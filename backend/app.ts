@@ -12,6 +12,7 @@ import AuthRoutes from './routes/AuthRoutes.js';
 import ChallengeRoutes from './routes/ChallengeRoutes.js';
 import DuelRoutes from './routes/DuelRoutes.js';
 import HealthDataRoutes from './routes/HealthDataRoutes.js';
+import TestRoutes from './routes/TestRoutes.js';
 
 import invalidRouteHandler from './middleware/invalid-route.js';
 import globalErrorHandler from './controllers/globalErrorHandler.js';
@@ -46,6 +47,7 @@ primaryRouter.use('/auth', AuthRoutes);
 primaryRouter.use('/challenges', ChallengeRoutes);
 primaryRouter.use('/duels', DuelRoutes);
 primaryRouter.use('/health-data', HealthDataRoutes);
+primaryRouter.use('/test', TestRoutes);
 primaryRouter.get('/', defaultApiResponse);
 app.use('/api/v1', primaryRouter);
 

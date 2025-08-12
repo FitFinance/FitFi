@@ -7,20 +7,19 @@ import User from '../../models/UserModel.js';
 import AppError from '../../utils/AppError.js';
 import generateNDigitRandomNumber from '../../utils/generateNDigitRandomNumber.js';
 import generateToken from '../../utils/generateToken.js';
+import { buildWalletAuthMessage } from './wallet-get-message.js';
 
 const walletAuth: fn = catchAsync(
   async (req: Request, res: Response, next: NextFunction) => {
     const signature: string | undefined = req.body.signature;
     const walletAddress: string | undefined = req.body.walletAddress;
-    const message: string | undefined = req.body.message;
 
-    if (!signature || !walletAddress || !message) {
+    if (!signature || !walletAddress) {
       const response: APIResponse = {
-        message: 'Missing signature, wallet address, or message.',
+        message: 'Missing signature or wallet address.',
         details: {
           title: 'Invalid Request',
-          description:
-            'Signature, wallet address, and message are all required.',
+          description: 'Signature and wallet address are required.',
         },
         status: 'fail',
         statusCode: 400,
@@ -30,10 +29,28 @@ const walletAuth: fn = catchAsync(
       return sendResponse(res, response);
     }
 
+    let userForMessage: IUser | null = await User.findOne({
+      walletAddress: walletAddress.toLowerCase(),
+    });
+    if (!userForMessage) {
+      return next(
+        new AppError(
+          'User not initialized. Retrieve message first.',
+          {
+            title: 'Message Not Requested',
+            description:
+              'Call /auth/wallet-get-message with walletAddress to initialize user & get message to sign.',
+          },
+          400
+        )
+      );
+    }
+    const message: string = buildWalletAuthMessage(userForMessage.nonce);
+
     let recoveredAddress: string | undefined;
 
     try {
-      // Check if we're in development mode and allow demo signatures
+      // Determine environment + mock
       const isDevelopment: boolean = process.env.NODE_ENV === 'development';
       const isMockSignature: boolean = signature.includes('mock');
 
@@ -42,13 +59,11 @@ const walletAuth: fn = catchAsync(
       console.log('🔍 Is mock signature:', isMockSignature);
 
       if (isDevelopment && isMockSignature) {
-        // Development mode: Allow mock signatures for testing
         console.log(
           '🧪 Development mode: Accepting mock signature for testing'
         );
-        recoveredAddress = walletAddress; // Accept the provided wallet address
+        recoveredAddress = walletAddress;
       } else if (isMockSignature) {
-        // Production mode but mock signature detected - reject it
         console.error('❌ Mock signature detected in production mode');
         return next(
           new AppError(
@@ -62,7 +77,23 @@ const walletAuth: fn = catchAsync(
           )
         );
       } else {
-        // Try personal_sign style first (most common)
+        // Basic format validation before expensive operations
+        const hexSigRegex: RegExp = /^0x[0-9a-fA-F]{130}$/;
+        if (!hexSigRegex.test(signature)) {
+          return next(
+            new AppError(
+              'Invalid signature format',
+              {
+                title: 'Malformed Signature',
+                description:
+                  'The provided signature is not a valid 65-byte hex string. Please sign the message again in your wallet.',
+              },
+              400
+            )
+          );
+        }
+
+        // Attempt personal_sign first
         try {
           recoveredAddress = ethers.verifyMessage(message, signature);
           console.log(
@@ -70,7 +101,6 @@ const walletAuth: fn = catchAsync(
             recoveredAddress
           );
         } catch (personalSignError) {
-          // Fallback for eth_sign: recover address from keccak256(message)
           try {
             const hash: string = ethers.keccak256(ethers.toUtf8Bytes(message));
             recoveredAddress = ethers.recoverAddress(hash, signature);
@@ -122,54 +152,18 @@ const walletAuth: fn = catchAsync(
       );
     }
 
-    // Find or create user
-    let user: IUser | null = await User.findOne({
-      walletAddress: walletAddress.toLowerCase(),
-    });
-
-    let isNewUser: boolean = false;
-
-    if (!user) {
-      // Create new user
-      console.log('🆕 Creating new user for wallet:', walletAddress);
-      const nonce: number = generateNDigitRandomNumber(6);
-      user = await User.create({
-        walletAddress: walletAddress.toLowerCase(),
-        nonce,
-        name: 'Anonymous',
-        lastLogin: new Date(),
-      });
-      isNewUser = true;
-    } else {
-      // Update existing user's nonce and last login
-      console.log('✅ Existing user found for wallet:', walletAddress);
-      user.nonce = generateNDigitRandomNumber(6);
-      user.lastLogin = new Date();
-      await user.save();
-    }
+    let user: IUser | null = userForMessage;
+    const isNewUser: boolean = false;
 
     console.log('👤 User ID:', user._id);
     const token: string | void = generateToken(user._id as string, req);
 
-    if (!token) {
-      const response: APIResponse = {
-        message: 'Failed to generate authentication token.',
-        details: {
-          title: 'Token Generation Error',
-          description:
-            'An error occurred while generating the authentication token. Please try again.',
-        },
-        success: false,
-        status: 'error',
-        statusCode: 500,
-      };
-      return sendResponse(res, response);
-    }
+    user.nonce = generateNDigitRandomNumber(6); // rotate for next round
+    user.lastLogin = new Date();
+    await user.save();
 
     const response: APIResponse = {
-      message: isNewUser
-        ? 'User created and authenticated successfully'
-        : 'User authenticated successfully',
+      message: 'User authenticated successfully',
       details: {
         title: 'Authentication Success',
         description:
@@ -184,9 +178,9 @@ const walletAuth: fn = catchAsync(
           walletAddress: user.walletAddress,
           name: user.name || 'Anonymous',
           role: user.role,
-          isNewUser: isNewUser,
+          isNewUser: false,
         },
-        nonce: user.nonce,
+        nonce: user.nonce, // new nonce for subsequent logins
         token: token,
       },
     };

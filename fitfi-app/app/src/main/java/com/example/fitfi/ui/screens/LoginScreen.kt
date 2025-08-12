@@ -23,7 +23,9 @@ fun LoginScreen(
     onNavigateToConnectWallet: () -> Unit,
     onNavigateToHome: () -> Unit
 ) {
-    var isLoading by remember { mutableStateOf(false) }
+    val viewModel = remember { com.example.fitfi.ui.viewmodel.AuthViewModel() }
+    val uiState by viewModel.uiState.collectAsState()
+    val isLoading = uiState.isLoading
     
     Column(
         modifier = Modifier
@@ -68,7 +70,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(FitFiSpacing.sm))
             
             Text(
-                text = "Connect your MetaMask wallet to get started",
+                text = "Sign in with your wallet",
                 style = MaterialTheme.typography.bodyLarge,
                 color = FitFiColors.TextSecondary,
                 textAlign = TextAlign.Center
@@ -80,7 +82,7 @@ fun LoginScreen(
         // Description
         FitFiCard {
             Text(
-                text = "You're about to authenticate with MetaMask via WalletConnect. If MetaMask doesn't open automatically, open it manually and approve the connection. You can also pick a different WalletConnect-compatible wallet (Trust, Rainbow, Coinbase Wallet, etc.).",
+                text = "Gasless message signature – no funds moved.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = FitFiColors.TextSecondary,
                 textAlign = TextAlign.Center
@@ -91,11 +93,7 @@ fun LoginScreen(
         
         // Connect MetaMask Button
         FitFiButton(
-            onClick = {
-                isLoading = true
-                // Simulate connection process
-                onNavigateToHome()
-            },
+            onClick = { viewModel.connectAndAuthenticate { onNavigateToHome() } },
             modifier = Modifier.fillMaxWidth(),
             enabled = !isLoading,
             variant = FitFiButtonVariant.Primary
@@ -111,7 +109,7 @@ fun LoginScreen(
             } else {
                 Text("🔗")
                 Spacer(modifier = Modifier.width(FitFiSpacing.xs))
-                Text("Connect MetaMask")
+                Text("Connect Wallet")
             }
         }
         
@@ -129,51 +127,32 @@ fun LoginScreen(
         // Info Section
         FitFiCard(variant = FitFiCardVariant.Highlight) {
             Text(
-                text = "Need MetaMask?",
+                text = "Need a wallet?",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.SemiBold
                 ),
                 color = FitFiColors.TextPrimary
             )
-            
-            Spacer(modifier = Modifier.height(FitFiSpacing.sm))
-            
-            Text(
-                text = "Install MetaMask (or another WalletConnect-compatible wallet). Open it once so it finishes setup. Then tap Connect MetaMask above. You will only sign a message – no gas or transaction fees.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = FitFiColors.TextSecondary
-            )
-            
             Spacer(modifier = Modifier.height(FitFiSpacing.xs))
-            
             Text(
-                text = "Powered by WalletConnect • EVM accounts only (Ethereum mainnet)",
+                text = "Install MetaMask, then tap Connect.",
                 style = MaterialTheme.typography.bodySmall,
-                color = FitFiColors.TextMuted,
-                fontStyle = androidx.compose.ui.text.font.FontStyle.Italic
+                color = FitFiColors.TextSecondary
             )
         }
         
         Spacer(modifier = Modifier.height(FitFiSpacing.xl))
         
         // Development Section
-        FitFiCard {
-            Text(
-                text = "Development Tools",
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = FitFiColors.TextSecondary,
-                textAlign = TextAlign.Center
-            )
-            
+        if (uiState.error != null) {
+            FitFiCard(variant = FitFiCardVariant.Base) {
+                Text(
+                    text = uiState.error ?: "",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = FitFiColors.Error
+                )
+            }
             Spacer(modifier = Modifier.height(FitFiSpacing.md))
-            
-            FitFiSecondaryButton(
-                text = "Demo Login (No Wallet)",
-                onClick = onNavigateToHome,
-                modifier = Modifier.fillMaxWidth()
-            )
         }
     }
 }

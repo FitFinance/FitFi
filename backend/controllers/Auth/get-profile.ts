@@ -8,7 +8,9 @@ import AppError from '../../utils/AppError.js';
 const getProfile: fn = catchAsync(
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     try {
-      const user: IUser | null = await User.findById(req.user._id).select('-nonce');
+      const user: IUser | null = await User.findById(req.user._id).select(
+        '-nonce'
+      );
 
       if (!user) {
         return next(
@@ -52,7 +54,8 @@ const getProfile: fn = catchAsync(
           'Failed to retrieve profile',
           {
             title: 'Retrieval Failed',
-            description: 'An error occurred while retrieving your profile. Please try again.',
+            description:
+              'An error occurred while retrieving your profile. Please try again.',
           },
           500
         )

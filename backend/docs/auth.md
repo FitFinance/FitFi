@@ -72,7 +72,7 @@ Endpoints will be documented in the following sections, starting with the nonce 
 
 ### URL
 
-`/api/v1/auth/get-nonce`
+`/api/v1/auth/wallet-get-message`
 
 ### Method
 
@@ -168,7 +168,7 @@ Used to request a nonce from the backend by sending the user's wallet address. T
 
 ### URL
 
-`/api/v1/auth/verify-and-login`
+`/api/v1/auth/wallet-auth`
 
 ### Method
 
@@ -303,9 +303,9 @@ This flow describes the steps a user must follow to log in using their wallet ad
 
 1. User connect wallet in the frontend via MetaMask (or decided wallet).
 2. User gets their wallet address.
-3. User calls the `/get-nonce` endpoint with their wallet address to retrieve a nonce for signing.
+3. User calls the `/wallet-get-message` endpoint with their wallet address to retrieve the message (including a nonce) to sign.
 4. User signs nonce using their wallet, this proves their ownership of the wallet.
-5. User sends the signed nonce (signature) along with their wallet address to the `/verify-and-login` endpoint. This will give user a JWT token if the signature is valid.
+5. User sends the wallet address and signature to `/wallet-auth`. If the signature matches the expected message, a JWT token is returned.
 6. User receives a JWT token, which can be used for authenticated requests to other endpoints.
 
 <!-- TODO: Implement -->
@@ -323,6 +323,6 @@ This is a simple flow for logging out a user.
 ### Notes
 
 - The endpoint expects both `walletAddress` and `signature` in the request body.
-- The nonce must be retrieved first using the `/get-nonce` endpoint.
+- The signable message (with nonce) must be retrieved first using the `/wallet-get-message` endpoint.
 - On successful verification, a JWT token is returned for authenticated access.
 - The nonce is updated after each successful login to prevent replay attacks.
