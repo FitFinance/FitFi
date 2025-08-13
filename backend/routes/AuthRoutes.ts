@@ -8,11 +8,26 @@ import updateProfile from '../controllers/Auth/update-profile.js';
 import getProfile from '../controllers/Auth/get-profile.js';
 import validateRequiredEnvVariables from '../middleware/validate-required-env-variables.js';
 import authenticate from '../middleware/authenticate.js';
+import register from '../controllers/Auth/register.js';
+import login from '../controllers/Auth/login.js';
 
 const AuthRoutes: Router = express.Router();
 
+// Username/password authentication endpoints (Option 2)
+AuthRoutes.post(
+  '/register',
+  validateRequiredEnvVariables('JWT_SECRET', 'JWT_TTL'),
+  register
+);
+AuthRoutes.post(
+  '/login',
+  validateRequiredEnvVariables('JWT_SECRET', 'JWT_TTL'),
+  login
+);
+
+// Wallet authentication endpoints (Option 1)
 // (Removed routes: /get-nonce, /request-otp, /verify-otp, /verify-and-login)
-// New simplified wallet authentication endpoint
+// Simplified wallet authentication endpoint
 AuthRoutes.post(
   '/wallet-auth',
   validateRequiredEnvVariables('JWT_SECRET', 'JWT_TTL'),

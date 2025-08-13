@@ -16,6 +16,7 @@ object NetworkModule {
     // - If emulator (generic/Android SDK) use 10.0.2.2
     // - Else use BuildConfig.DEV_HOST_IP (configurable) or fallback to local network suggestion
     private val BASE_URL: String by lazy {
+        // Detect emulator to map localhost correctly
         val isEmulator = listOf(
             android.os.Build.FINGERPRINT.contains("generic"),
             android.os.Build.FINGERPRINT.lowercase().contains("emulator"),
@@ -27,8 +28,18 @@ object NetworkModule {
         ).any { it }
 
         val host = if (isEmulator) "10.0.2.2" else BuildConfig.DEV_HOST_IP
-        // Ensure trailing slash for Retrofit base URL
-        "http://$host:3000/api/v1/"
+
+        // Allow switching between http and https without code edits.
+        // We inject BUILD config fields via Gradle: DEV_USE_HTTPS ("true"/"false") and optional DEV_HTTP_PORT / DEV_HTTPS_PORT.
+        val useHttps = (try { BuildConfig.DEV_USE_HTTPS } catch (_: Throwable) { "false" }) == "true"
+        val httpPort = (try { BuildConfig.DEV_HTTP_PORT } catch (_: Throwable) { "3000" })
+        val httpsPort = (try { BuildConfig.DEV_HTTPS_PORT } catch (_: Throwable) { "3443" })
+        val scheme = if (useHttps) "https" else "http"
+        val port = if (useHttps) httpsPort else httpPort
+
+        val base = "$scheme://$host:$port/api/v1/"
+        android.util.Log.i("NetworkModule", "Using BASE_URL=$base (useHttps=$useHttps host=$host)")
+        base
     }
 
     private val logging: HttpLoggingInterceptor by lazy {
@@ -38,7 +49,7 @@ object NetworkModule {
     private val httpClient: OkHttpClient by lazy {
         OkHttpClient.Builder()
             .addInterceptor(logging)
-            // Extra interceptor to log raw body when JSON parsing fails (non 2xx or text/html)
+            // Extra interceptor to log raw body when ccount he needs to JSON parsing fails (non 2xx or text/html)
             .addInterceptor { chain ->
                 val req = chain.request()
                 val res: Response = chain.proceed(req)

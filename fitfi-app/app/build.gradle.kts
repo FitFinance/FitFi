@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.dagger.hilt.android")
+    kotlin("kapt")
 }
 
 android {
@@ -15,6 +17,24 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Provide default dev networking config so BuildConfig fields always exist
+        val devHostIpProp = project.findProperty("fitfi.devHostIp") as String? ?: "192.168.164.117"
+        buildConfigField("String", "DEV_HOST_IP", "\"$devHostIpProp\"")
+        val devUseHttps = project.findProperty("fitfi.useHttps") as String? ?: "false"
+        buildConfigField("String", "DEV_USE_HTTPS", "\"$devUseHttps\"")
+        val devHttpPort = project.findProperty("fitfi.httpPort") as String? ?: "3000"
+        buildConfigField("String", "DEV_HTTP_PORT", "\"$devHttpPort\"")
+        val devHttpsPort = project.findProperty("fitfi.httpsPort") as String? ?: "3443"
+        buildConfigField("String", "DEV_HTTPS_PORT", "\"$devHttpsPort\"")
+        val wcProjectIdProp = project.findProperty("fitfi.wcProjectId") as String? ?: "REPLACE_ME"
+        buildConfigField("String", "WC_PROJECT_ID", "\"$wcProjectIdProp\"")
+        val wcRelayUrlProp = project.findProperty("fitfi.wcRelayUrl") as String? ?: "wss://relay.walletconnect.com"
+        buildConfigField("String", "WC_RELAY_URL", "\"$wcRelayUrlProp\"")
+    val infuraKeyProp = project.findProperty("fitfi.infuraKey") as String? ?: ""
+    buildConfigField("String", "INFURA_KEY", "\"$infuraKeyProp\"")
+    val dappUrlProp = project.findProperty("fitfi.dappUrl") as String? ?: "https://halleysspaceshooter.netlify.app/"
+    buildConfigField("String", "DAPP_URL", "\"$dappUrlProp\"")
     }
 
     buildTypes {
@@ -24,14 +44,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Provide the same DEV_HOST_IP so NetworkModule compiles in release
-            val devHostIpProp = project.findProperty("fitfi.devHostIp") as String? ?: "192.168.164.117"
-            buildConfigField("String", "DEV_HOST_IP", "\"$devHostIpProp\"")
+            // (Optional) Override values for release via -P properties if needed; defaults already set in defaultConfig.
         }
         debug {
-            // Allow overriding dev host IP via gradle property: -Pfitfi.devHostIp=192.168.0.50
-            val devHostIpProp = project.findProperty("fitfi.devHostIp") as String? ?: "192.168.164.117"
-            buildConfigField("String", "DEV_HOST_IP", "\"$devHostIpProp\"")
+            // For debug we rely on defaultConfig values; pass -P flags to override when invoking gradle.
         }
     }
     compileOptions {
@@ -88,6 +104,12 @@ dependencies {
     
     // Image loading
     implementation(libs.coil.compose)
+    // MetaMask Android SDK
+    implementation("io.metamask.androidsdk:metamask-android-sdk:0.6.6")
+    // Hilt DI
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

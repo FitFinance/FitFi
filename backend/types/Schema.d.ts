@@ -11,6 +11,10 @@ declare global {
     username?: string;
     email?: string;
     isActive?: boolean;
+    passwordHash?: string;
+    signupAppVersion?: string;
+    lastLoginAppVersion?: string;
+    firstLoginAt?: Date;
     role: 'user' | 'admin';
   }
 
