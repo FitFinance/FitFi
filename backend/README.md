@@ -51,19 +51,23 @@ Below is a list of the global dependencies installed by the `preinstall` script,
 ## Environment Setup
 
 ### 1. Clone the Repository
+
 ```bash
 git clone <repository-url>
 cd fitfi/backend
 ```
 
 ### 2. Install Dependencies
+
 ```bash
 npm run preinstall  # Install global dependencies
 npm install         # Install project dependencies
 ```
 
 ### 3. Environment Configuration
+
 Copy the example environment file and configure it:
+
 ```bash
 cp .env.example .env
 ```
@@ -71,6 +75,7 @@ cp .env.example .env
 Edit the `.env` file with your actual configuration values:
 
 #### Required Environment Variables:
+
 - `MONGO_URI`: MongoDB connection string
 - `JWT_SECRET`: Secret key for JWT tokens
 - `REDIS_URL`: Redis connection string
@@ -80,12 +85,15 @@ Edit the `.env` file with your actual configuration values:
 - `PLATFORM_PRIVATE_KEY`: Platform wallet private key (keep secure!)
 
 ### 4. Database Setup
+
 Start MongoDB and Redis using Docker:
+
 ```bash
 docker-compose up -d
 ```
 
 ### 5. Start the Development Server
+
 ```bash
 npm run dev
 ```
@@ -95,12 +103,14 @@ npm run dev
 FitFi integrates with the Core Testnet 2 blockchain for decentralized fitness dueling:
 
 ### Features:
+
 - **Smart Contract Staking**: Users stake tCORE2 tokens for duels
 - **Automated Settlements**: Winners receive 85% of the total stake
 - **Platform Fees**: 10% platform fee, 5% goes to a community pool
 - **Real-time Updates**: WebSocket events for blockchain transactions
 
 ### Contract Details:
+
 - **Network**: Core Testnet 2 (Chain ID: 1114)
 - **Contract Address**: `0x8796071429e599a1ec631258dF4aEceA18cB9F69`
 - **RPC URL**: `https://rpc.test2.btcs.network`
@@ -108,15 +118,18 @@ FitFi integrates with the Core Testnet 2 blockchain for decentralized fitness du
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/login` - User login with wallet signature
 - `POST /api/auth/register` - User registration
 
 ### Duels
+
 - `POST /api/duels/search-opponent` - Find and create blockchain duel
 - `POST /api/duels/stake-duel` - Record blockchain stake transaction
 - `PUT /api/duels/:id` - Update duel status and trigger settlement
 
 ### WebSocket Events
+
 - `match_found_start_staking` - Opponent found, start staking
 - `user_staked` - User completed blockchain stake
 - `duel_active` - Both users staked, duel active
@@ -125,6 +138,7 @@ FitFi integrates with the Core Testnet 2 blockchain for decentralized fitness du
 ## Development Scripts
 
 ### Available Scripts:
+
 - `npm run dev` - Start development server with hot reload
 - `npm run build` - Build TypeScript to JavaScript
 - `npm run start` - Start production server
@@ -132,6 +146,7 @@ FitFi integrates with the Core Testnet 2 blockchain for decentralized fitness du
 - `npm run docs` - Start documentation server
 
 ### Utility Scripts:
+
 - `scripts/create-admin-account.ts` - Create admin user account
 - `scripts/dummy-wallet.ts` - Test wallet utilities
 
@@ -148,6 +163,7 @@ FitFi integrates with the Core Testnet 2 blockchain for decentralized fitness du
 ## Database Schema
 
 ### Users Collection:
+
 ```typescript
 interface IUser {
   walletAddress: string;
@@ -159,6 +175,7 @@ interface IUser {
 ```
 
 ### Duels Collection:
+
 ```typescript
 interface IDuels {
   user1: ObjectId;
@@ -271,3 +288,49 @@ nodemon dist/server.js
 By running these commands in separate terminals, you can ensure that the development environment functions as expected, even if the `npm run dev` command fails.
 
 ---
+
+## OTP-based Login Flow (no deep links)
+
+The mobile app supports an OTP-only login/signup that does not require WalletConnect or deep links. The backend emits an OTP via the `FitFiSignup` smart contract and stores it temporarily in Redis. The user enters the OTP in the app, and the backend verifies it, creates the user if needed, and issues a JWT.
+
+Routes:
+
+- POST `/api/v1/auth/request-otp` with `{ walletAddress }`
+- POST `/api/v1/auth/verify-otp` with `{ walletAddress, otp }`
+
+Required env:
+
+- `ETH_RPC_URL` – RPC URL for your chain (e.g., Core Testnet)
+- `SIGNUP_CONTRACT_ADDRESS` – Address of deployed `FitFiSignup` contract
+- `ADMIN_PRIVATE_KEY` – Private key of the contract owner (used to issue OTP)
+- `OTP_TTL_SECONDS` – OTP validity in seconds (e.g., 300)
+- `REDIS_URI`, `REDIS_PASS` – Redis connection for OTP storage
+- `JWT_SECRET`, `JWT_TTL` – JWT settings
+
+Security note: This demo emits the OTP in a public event. Do not use this unmodified pattern in production.
+
+### Deploying `FitFiSignup`
+
+1. Go to `contracts/`
+2. Install deps: `npm ci`
+3. Fund a testnet account and set env variables for deployment (RPC URL and PRIVATE_KEY)
+4. Use the provided Hardhat scripts under `contracts/scripts` to deploy. Copy the deployed address.
+5. Set `SIGNUP_CONTRACT_ADDRESS` in backend `.env` and restart the server.
+6. (Upgrade) For OTP value-encoding support (show numeric OTP via a wei transfer) deploy the upgraded contract (adds `valueEncodingBase` and `issueOtpWithEncodedValue`). Fund the contract with a small balance if you will use contract-based encoded value.
+
+### Additional OTP Delivery Environment Flags
+
+- `OTP_DELIVERY_MODE` = `contract` | `tx` | `both` (default `contract`). Controls whether to also send a direct admin tx embedding OTP in data.
+- `OTP_CONTRACT_PING` = `true|false`. When true uses `issueOtpWithPing` so the contract sends a tiny pre-configured dust amount (`pingDustWei`).
+- `OTP_VALUE_ENCODING` = `true|false`. When true backend sends an extra direct ETH transfer whose wei amount encodes the numeric OTP (otp \* 1000 wei; 1 gwei fallback) so user sees incoming value.
+- `OTP_VALUE_ENCODING_CALL_CONTRACT` = `true|false`. When true backend calls the contract's `issueOtpWithEncodedValue` (contract must be the upgraded version and funded) so the contract sends encoded value instead of the admin EOA.
+
+### OTP Delivery Modes Summary
+
+1. Contract Event Only: `OTP_DELIVERY_MODE=contract` (default). OTP appears in `OtpIssued` event.
+2. Event + Data Tx: `OTP_DELIVERY_MODE=both`. Adds zero-value admin tx with UTF-8 payload containing OTP.
+3. Value Encoding (EOA): Add `OTP_VALUE_ENCODING=true`. Adds a second transfer with wei = otp \* 1000.
+4. Value Encoding (Contract): Set `OTP_VALUE_ENCODING_CALL_CONTRACT=true` (optionally with or without ping). Contract emits event then attempts to send encoded value from its balance.
+5. Ping Dust: Enable `OTP_CONTRACT_PING=true` and set `pingDustWei` on contract; adds small visibility transfer separate from value-encoded path.
+
+Tuning: You can adjust `valueEncodingBase` on-chain via `setValueEncodingBase(newBase)` if you want fewer / more wei per OTP unit.

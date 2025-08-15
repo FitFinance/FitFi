@@ -1,7 +1,7 @@
 import AppError from '../utils/AppError.js';
 import { NextFunction, Request, Response } from 'express';
 
-function sendErrorProd(err: AppError, _: Request, res: Response) {
+function sendErrorProd(err: any, _: Request, res: Response) {
   // Send minimal error details in production
   let response: APIResponse;
   if (!err?.isOperational) {
@@ -29,7 +29,7 @@ function sendErrorProd(err: AppError, _: Request, res: Response) {
   return res.status(err.statusCode).json(response);
 }
 
-function sendErrorDev(err: AppError, _: Request, res: Response) {
+function sendErrorDev(err: any, _: Request, res: Response) {
   const response: APIResponse = {
     message: err.message,
     details: err.details,
@@ -45,7 +45,7 @@ function sendErrorDev(err: AppError, _: Request, res: Response) {
 
 // ! Do not remove next function even though it is not being used
 function globalErrorHandler(
-  err: AppError,
+  err: any,
   req: Request,
   res: Response,
   _next: NextFunction

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Allow cleartext (HTTP) traffic for development hosts -->
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Emulator host alias -->
+        <domain includeSubdomains="true">10.0.2.2</domain>
+    </domain-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <!-- Typical local network IP range examples; adjust as needed -->
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">192.168.1.0</domain>
+        <domain includeSubdomains="true">192.168.164.117</domain>
+    </domain-config>
+    <!-- You can tighten this later for production by removing or restricting domains -->
+</network-security-config>

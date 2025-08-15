@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 
 // ! Check if having any of these middlewares cause disruption in the working of app
@@ -12,6 +12,7 @@ import AuthRoutes from './routes/AuthRoutes.js';
 import ChallengeRoutes from './routes/ChallengeRoutes.js';
 import DuelRoutes from './routes/DuelRoutes.js';
 import HealthDataRoutes from './routes/HealthDataRoutes.js';
+import TestRoutes from './routes/TestRoutes.js';
 
 import invalidRouteHandler from './middleware/invalid-route.js';
 import globalErrorHandler from './controllers/globalErrorHandler.js';
@@ -34,12 +35,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Log all incoming requests
+app.use((req: Request, _res: Response, next: NextFunction) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
+
 const primaryRouter: express.Router = express.Router();
 
 primaryRouter.use('/auth', AuthRoutes);
 primaryRouter.use('/challenges', ChallengeRoutes);
 primaryRouter.use('/duels', DuelRoutes);
 primaryRouter.use('/health-data', HealthDataRoutes);
+primaryRouter.use('/test', TestRoutes);
 primaryRouter.get('/', defaultApiResponse);
 app.use('/api/v1', primaryRouter);
 

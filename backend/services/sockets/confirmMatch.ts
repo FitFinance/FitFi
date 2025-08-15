@@ -31,7 +31,7 @@ const confirmMatch: socketFn = catchAsyncSockets(
 
     // Set a 30 seconds timer to auto-cancel if not already set
     const timerKey: string = `duel:${duelId}:confirmationTimer`;
-    const timerExists: string | null = await redisClient.get(timerKey);
+  const timerExists: string | null = (await (redisClient as any).get(timerKey)) as string | null;
     if (!timerExists) {
       // Set a timer key with 5 min expiry
       await redisClient.set(timerKey, '1', { EX: 300 });
