@@ -19,6 +19,16 @@ FitFi/
 └── fitfi-mobile-app/     # React Native/Expo mobile app
 ```
 
+## App Screenshots
+
+<div align="center">
+  <img src="images/Login.png" alt="Login Screen" width="200" style="margin: 10px;" />
+  <img src="images/Home.png" alt="Home Screen" width="200" style="margin: 10px;" />
+  <img src="images/Challenge.png" alt="Challenge Screen" width="200" style="margin: 10px;" />
+  <img src="images/Match-Making.png" alt="Match Making Screen" width="200" style="margin: 10px;" />
+  <img src="images/Win.png" alt="Win Screen" width="200" style="margin: 10px;" />
+</div>
+
 ## 📋 Table of Contents
 
 - [Smart Contracts](#-smart-contracts)
