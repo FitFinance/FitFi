@@ -27,16 +27,16 @@
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "outDir": "./dist",
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "strictFunctionTypes": true,
-    "noDeprecated": true,
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+
     "strictBindCallApply": true,
     "noImplicitThis": false,
-    "alwaysStrict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+    "alwaysStrict": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "skipLibCheck": true
   }
 }

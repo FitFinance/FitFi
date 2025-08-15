@@ -3,6 +3,7 @@ import './utils/console-color.js';
 import './utils/setup-env.js';
 import app from './app.js';
 import './utils/connect-db.js';
+import { initRedis } from './services/redis/index.js';
 import { createServer, Server as HttpServer } from 'node:http';
 import { initiateSocket, getIO } from './services/sockets/index.js';
 import { duelStakingService } from './services/DuelStakingService.js';
@@ -12,6 +13,16 @@ const PORT: number = Number(process.env?.PORT) || 3000;
 
 const httpServer: HttpServer = createServer(app);
 initiateSocket(httpServer);
+
+// Initialize Redis
+initRedis().catch((err: any) => {
+  console.log(
+    chalk.bgRed('FATAL'),
+    chalk.red('Redis initialization failed:'),
+    err
+  );
+  process.exit(1);
+});
 
 // Setup blockchain event listeners
 setupBlockchainEventListeners();

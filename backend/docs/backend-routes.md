@@ -40,14 +40,14 @@ All backend routes currently use the `/api/v1` prefix, indicating that these end
     <tr>
         <td><a href="/#/./auth.md">Auth</a></td>
         <td><code>POST</code></td>
-        <td><code>/api/v1/auth/verify-and-login</code></td>
+    <td><code>/api/v1/auth/wallet-auth</code></td>
         <td>Used to Login and Signup</td>
         <td><!-- Swagger link placeholder --></td>
     </tr>
     <tr>
         <td></td>
         <td><code>POST</code></td>
-        <td><code>/api/v1/auth/get-nonce</code></td>
+    <td><code>/api/v1/auth/wallet-get-message</code></td>
         <td>Used to request nonce from the back-end by sending wallet address</td>
         <td><!-- Swagger link placeholder --></td>
     </tr>
